@@ -1,31 +1,27 @@
+// lib/main.dart
 import 'package:akora_app/app.dart';
-import 'package:flutter/material.dart'; // Still needed for WidgetsFlutterBinding
-// import 'package:flutter_bloc/flutter_bloc.dart'; // For BLoC observer later
-// import 'package:akora_app/core/services/notification_service.dart'; // For notifications later
-// import 'package:akora_app/data/sources/local/app_database.dart'; // For database later
+import 'package:flutter/cupertino.dart'; // Use Cupertino or Material
+import 'package:flutter/material.dart';
+
+// 1. Import Firebase Core
+import 'package:firebase_core/firebase_core.dart';
+// 2. Import the generated firebase_options.dart file
+import 'firebase_options.dart';
 
 void main() async {
-  // Ensures that plugin services are initialized before runApp()
+  // 3. Ensure that the Flutter binding is initialized before calling Firebase.initializeApp
   WidgetsFlutterBinding.ensureInitialized();
 
-  // --- Initialize Services (uncomment and implement as you build them) ---
-  // Example: Initialize Notifications
-  // if (NotificationService.instance != null) { // Check if you made it a singleton
-  //   await NotificationService.instance!.init();
-  // }
-
-
-  // Example: Initialize Database (if using a global instance, otherwise provide via DI/Bloc)
-  // final AppDatabase database = AppDatabase();
-
-  // --- BLoC Observer (optional, for debugging state changes if using BLoC) ---
-  // if (Bloc.observer is AppBlocObserver) { // Example, if you create AppBlocObserver
-  //   Bloc.observer = AppBlocObserver();
-  // }
-
-  runApp(
-    // If using Drift/sqflite and BLoC, you'll likely set up RepositoryProviders here
-    // that take the database instance. For now, keep it simple.
-    const AkoraApp(),
+  // 4. Initialize Firebase using the generated options for the current platform
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // You can remove any old local DB initialization code that might have been here.
+  // For example:
+  // late AppDatabase db;
+  // db = AppDatabase();
+
+  // 5. Run your app
+  runApp(const AkoraApp());
 }

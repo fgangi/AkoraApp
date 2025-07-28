@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "289076977643",
+    "project_id": "akora-app-polimi",
+    "storage_bucket": "akora-app-polimi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:289076977643:android:1832eb9e8d830b345683ae",
+        "android_client_info": {
+          "package_name": "com.example.akora_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-Hpj06K97xRqQ3naxTemNbSPeEHJqKxE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

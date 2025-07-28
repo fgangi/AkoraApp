@@ -3,7 +3,6 @@ import 'package:akora_app/data/models/drug_model.dart';
 import 'package:akora_app/data/sources/local/local_drug_data.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
-// Import AppRouter for route names
 import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // If you used FaIcon for QR
 
