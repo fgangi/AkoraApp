@@ -1,6 +1,5 @@
 // lib/data/sources/local/local_drug_data.dart
 import 'package:akora_app/data/models/drug_model.dart';
-// Import FontAwesome
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 final List<Drug> sampleItalianDrugs = [
@@ -85,8 +84,4 @@ final List<Drug> sampleItalianDrugs = [
     form: DrugForm.syrup, // Representing liquid in sachet
     icon: FontAwesomeIcons.prescriptionBottle, // Or .kitMedical for sachets
   ),
-  // You can explore more icons:
-  // FontAwesomeIcons.syringe (for injections)
-  // FontAwesomeIcons.tablets (alternative for pills)
-  // FontAwesomeIcons.staffAesculapius (medical staff/pharmacy symbol)
 ];

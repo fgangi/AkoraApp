@@ -67,7 +67,7 @@ class WelcomeScreen extends StatelessWidget {
                 const SizedBox(height: 40),
                 CupertinoButton.filled(
                   onPressed: () {
-                    context.pushNamed(AppRouter.drugSearchRouteName);
+                    context.pushNamed(AppRouter.addTherapyStartRouteName);
                   },
                   child: const Text('Inserisci il farmaco'), // Hardcoded string
                 ),

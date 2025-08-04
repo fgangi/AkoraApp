@@ -1,17 +1,21 @@
 // lib/features/therapy_management/screens/therapy_summary_screen.dart
+
+// --- NEW IMPORTS FOR DATABASE INTERACTION ---
+import 'package:akora_app/data/sources/local/app_database.dart';
+import 'package:akora_app/main.dart'; // To access the global 'db' instance
+import 'package:drift/drift.dart' show Value;
+
+// --- EXISTING IMPORTS ---
+import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:akora_app/data/models/drug_model.dart';
-import 'package:akora_app/features/therapy_management/screens/dose_and_expiry_screen.dart';
-import 'package:akora_app/features/therapy_management/screens/therapy_frequency_screen.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'; // For TimeOfDay
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:intl/intl.dart';
 
 class TherapySummaryScreen extends StatelessWidget {
-  // ... (constructor and all properties remain the same) ...
   final Drug selectedDrug;
   final TakingFrequency selectedFrequency;
   final TimeOfDay selectedTime;
@@ -35,11 +39,10 @@ class TherapySummaryScreen extends StatelessWidget {
     required this.notificationSound,
   });
 
-  // Helper function to format the frequency display text
+  // Helper function to format the frequency display text (no changes)
   String _formatFrequency(BuildContext context) {
     switch (selectedFrequency) {
       case TakingFrequency.onceDaily:
-        // THE FIX IS HERE: Just call .format(context) directly on the TimeOfDay object.
         return 'Ogni giorno alle ${selectedTime.format(context)}';
       case TakingFrequency.twiceDaily:
         return 'Due volte al giorno';
@@ -50,24 +53,69 @@ class TherapySummaryScreen extends StatelessWidget {
     }
   }
 
-  // ... (_saveAndConfirm method remains the same) ...
-  void _saveAndConfirm(BuildContext context) {
-    print('--- THERAPY SAVED ---');
-    print('Drug: ${selectedDrug.name}');
-    print('Frequency: $selectedFrequency');
-    print('Time: ${selectedTime.format(context)}'); // Also use format(context) here for consistency
-    print('Repeat: $repeatAfter10Min');
-    print('Start Date: $startDate');
-    print('End Date: $endDate');
-    print('Dose Threshold: $doseThreshold');
-    print('Expiry Date: $expiryDate');
-    print('Notification Sound: $notificationSound');
-    // TODO: Save to DB, schedule notifications, navigate home
+  // --- UPDATED _saveAndConfirm METHOD ---
+  Future<void> _saveAndConfirm(BuildContext context) async {
+    print('--- SAVING THERAPY TO LOCAL DRIFT/SQLITE DATABASE ---');
+
+    // Drift uses "Companion" objects for inserts and updates.
+    // They are type-safe and handle default values and nullability gracefully.
+    final therapyToInsert = TherapiesCompanion(
+      drugName: Value(selectedDrug.name),
+      drugDosage: Value(selectedDrug.dosage),
+      takingFrequency: Value(selectedFrequency),
+      reminderHour: Value(selectedTime.hour),
+      reminderMinute: Value(selectedTime.minute),
+      repeatAfter10Min: Value(repeatAfter10Min),
+      startDate: Value(startDate),
+      endDate: Value(endDate),
+      doseThreshold: Value(doseThreshold),
+      expiryDate: Value(expiryDate), // Drift correctly handles null values when wrapped in Value()
+      notificationSound: Value(notificationSound),
+      // isActive and isPaused will use their default values (true and false)
+    );
+
+    try {
+      // Use the global 'db' instance (from main.dart) to call the create method
+      // that we defined in our AppDatabase class.
+      await db.createTherapy(therapyToInsert);
+      
+      print('--- THERAPY SUCCESSFULLY SAVED ---');
+
+      // TODO: Schedule local notifications based on the saved data. This is the next major feature.
+
+      // After a successful save, navigate to the main home screen,
+      // clearing the entire setup flow from the navigation stack.
+      if (context.mounted) {
+        // Use context.goNamed() to replace the navigation stack so the user
+        // can't press 'back' to get into the setup flow again.
+        context.goNamed(AppRouter.homeRouteName);
+      }
+
+    } catch (e) {
+      print('--- FAILED TO SAVE THERAPY TO LOCAL DB: $e ---');
+      
+      // Show an error dialog to the user if saving fails.
+      if (context.mounted) {
+        showCupertinoDialog(
+          context: context,
+          builder: (ctx) => CupertinoAlertDialog(
+            title: const Text('Errore'),
+            content: const Text('Impossibile salvare la terapia. Si prega di riprovare.'),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('OK'),
+                isDefaultAction: true,
+                onPressed: () => Navigator.pop(ctx),
+              )
+            ],
+          ),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // ... (build method and _buildSummaryRow method are exactly the same as the previous correct version) ...
     final theme = CupertinoTheme.of(context);
     final pageBackgroundColor = theme.primaryColor.withOpacity(0.95);
 
@@ -102,6 +150,7 @@ class TherapySummaryScreen extends StatelessWidget {
                       text: selectedDrug.fullDescription,
                       onEdit: () {
                         print('Edit Drug tapped');
+                        // TODO: Implement navigation back to drug search
                       },
                     ),
                     _buildSummaryRow(
@@ -109,6 +158,7 @@ class TherapySummaryScreen extends StatelessWidget {
                       text: _formatFrequency(context),
                       onEdit: () {
                         print('Edit Time tapped');
+                        // TODO: Implement navigation back to frequency/time screens
                       },
                     ),
                     _buildSummaryRow(
@@ -116,6 +166,7 @@ class TherapySummaryScreen extends StatelessWidget {
                       text: 'Dal ${DateFormat('dd/MM/yyyy').format(startDate)} al ${DateFormat('dd/MM/yyyy').format(endDate)}',
                       onEdit: () {
                         print('Edit Duration tapped');
+                        // TODO: Implement navigation back to duration screen
                       },
                     ),
                     _buildSummaryRow(
@@ -123,6 +174,7 @@ class TherapySummaryScreen extends StatelessWidget {
                       text: 'Avviso a $doseThreshold dosi rimanenti',
                       onEdit: () {
                         print('Edit Dose Alert tapped');
+                        // TODO: Implement navigation back to dose/expiry screen
                       },
                     ),
                     if (expiryDate != null)
@@ -131,6 +183,7 @@ class TherapySummaryScreen extends StatelessWidget {
                         text: 'Notifica per scadenza 7 giorni prima',
                         onEdit: () {
                           print('Edit Expiry Alert tapped');
+                          // TODO: Implement navigation back to dose/expiry screen
                         },
                       ),
                   ],
