@@ -1,25 +1,26 @@
 // lib/features/therapy_management/screens/therapy_duration_screen.dart
-import 'package:akora_app/data/models/drug_model.dart';
-import 'package:go_router/go_router.dart'; 
 import 'package:akora_app/core/navigation/app_router.dart';
-import 'package:akora_app/features/therapy_management/screens/therapy_frequency_screen.dart';
+import 'package:akora_app/data/models/drug_model.dart';
+import 'package:akora_app/data/sources/local/app_database.dart'; // Import for Therapy
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'; // For TimeOfDay
+import 'package:go_router/go_router.dart';
 
 class TherapyDurationScreen extends StatefulWidget {
-  // All the data collected so far
-  final Drug selectedDrug;
+  final Drug currentDrug;
   final TakingFrequency selectedFrequency;
   final TimeOfDay selectedTime;
   final bool repeatAfter10Min;
+  final Therapy? initialTherapy; // For Edit Mode
 
   const TherapyDurationScreen({
     super.key,
-    required this.selectedDrug,
+    required this.currentDrug,
     required this.selectedFrequency,
     required this.selectedTime,
     required this.repeatAfter10Min,
+    this.initialTherapy,
   });
 
   @override
@@ -27,34 +28,34 @@ class TherapyDurationScreen extends StatefulWidget {
 }
 
 class _TherapyDurationScreenState extends State<TherapyDurationScreen> {
-  // State for start and end dates
-  DateTime _startDate = DateTime.now();
-  DateTime _endDate = DateTime.now().add(const Duration(days: 7)); // Default to 1 week duration
+  late DateTime _startDate;
+  late DateTime _endDate;
 
-   void _navigateToNextStep() {
-    // This is the correct action for the "Avanti" button on this screen.
-    // Its job is to navigate to the DOSE & EXPIRY screen.
-    
-    print('--- Navigating from DurationScreen to DoseAndExpiryScreen ---');
-    print('Data being passed:');
-    print('- Drug: ${widget.selectedDrug.name}');
-    print('- Frequency: ${widget.selectedFrequency}');
-    print('- Time: ${widget.selectedTime.format(context)}');
-    print('- Repeat: ${widget.repeatAfter10Min}');
-    print('- Start Date: $_startDate');
-    print('- End Date: $_endDate');
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialTherapy != null) {
+      // --- EDIT MODE ---
+      _startDate = widget.initialTherapy!.startDate;
+      _endDate = widget.initialTherapy!.endDate;
+    } else {
+      // --- CREATE MODE ---
+      _startDate = DateTime.now();
+      _endDate = DateTime.now().add(const Duration(days: 7));
+    }
+  }
 
-    // Use GoRouter to push the next screen in the flow,
-    // which is doseAndExpiryRouteName.
+  void _navigateToNextStep() {
     context.pushNamed(
       AppRouter.doseAndExpiryRouteName,
       extra: {
-        'drug': widget.selectedDrug,
+        'drug': widget.currentDrug,
         'frequency': widget.selectedFrequency,
         'time': widget.selectedTime,
         'repeat': widget.repeatAfter10Min,
         'startDate': _startDate,
         'endDate': _endDate,
+        'initialTherapy': widget.initialTherapy, // Pass it along
       },
     );
   }
@@ -95,7 +96,7 @@ class _TherapyDurationScreenState extends State<TherapyDurationScreen> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: Text(widget.selectedDrug.name),
+        middle: Text(widget.currentDrug.name),
         previousPageTitle: 'Orario',
       ),
       child: SafeArea(

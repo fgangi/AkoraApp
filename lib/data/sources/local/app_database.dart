@@ -37,7 +37,6 @@ class Therapies extends Table {
   // Extra Reminders
   IntColumn get doseThreshold => integer()();
   DateTimeColumn get expiryDate => dateTime().nullable()(); // This column can be empty (null).
-  TextColumn get notificationSound => text().map(const NotificationSoundConverter())();
 
   // Therapy State (for features like pausing or deleting)
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
@@ -52,14 +51,6 @@ class TakingFrequencyConverter extends TypeConverter<TakingFrequency, String> {
   TakingFrequency fromSql(String fromDb) => TakingFrequency.values.byName(fromDb);
   @override
   String toSql(TakingFrequency value) => value.name;
-}
-
-class NotificationSoundConverter extends TypeConverter<NotificationSound, String> {
-  const NotificationSoundConverter();
-  @override
-  NotificationSound fromSql(String fromDb) => NotificationSound.values.byName(fromDb);
-  @override
-  String toSql(NotificationSound value) => value.name;
 }
 
 

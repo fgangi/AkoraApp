@@ -1,29 +1,31 @@
 // lib/features/therapy_management/screens/dose_and_expiry_screen.dart
-import 'package:akora_app/core/navigation/app_router.dart'; // Import AppRouter
+import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:akora_app/data/models/drug_model.dart';
-import 'package:akora_app/features/therapy_management/screens/therapy_frequency_screen.dart';
+import 'package:akora_app/data/sources/local/app_database.dart'; // Import for Therapy
+import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'; // For TimeOfDay
-import 'package:go_router/go_router.dart'; // Import GoRouter
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 
 class DoseAndExpiryScreen extends StatefulWidget {
-  final Drug selectedDrug;
+  final Drug currentDrug;
   final TakingFrequency selectedFrequency;
   final TimeOfDay selectedTime;
   final bool repeatAfter10Min;
   final DateTime startDate;
   final DateTime endDate;
+  final Therapy? initialTherapy; // For Edit Mode
 
   const DoseAndExpiryScreen({
     super.key,
-    required this.selectedDrug,
+    required this.currentDrug,
     required this.selectedFrequency,
     required this.selectedTime,
     required this.repeatAfter10Min,
     required this.startDate,
     required this.endDate,
+    this.initialTherapy,
   });
 
   @override
@@ -31,26 +33,37 @@ class DoseAndExpiryScreen extends StatefulWidget {
 }
 
 class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
-  int _remainingDosesThreshold = 10;
+  late int _remainingDosesThreshold;
   DateTime? _expiryDate;
-  NotificationSound _notificationSound = NotificationSound.forteConVibrazione;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialTherapy != null) {
+      // --- EDIT MODE ---
+      _remainingDosesThreshold = widget.initialTherapy!.doseThreshold;
+      _expiryDate = widget.initialTherapy!.expiryDate;
+    } else {
+      // --- CREATE MODE ---
+      _remainingDosesThreshold = 10;
+      _expiryDate = DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day);
+    }
+  }
 
   void _navigateToNextStep() {
-    final dataToPass = {
-      'drug': widget.selectedDrug,
-      'frequency': widget.selectedFrequency,
-      'time': widget.selectedTime,
-      'repeat': widget.repeatAfter10Min,
-      'startDate': widget.startDate,
-      'endDate': widget.endDate,
-      'doseThreshold': _remainingDosesThreshold,
-      'expiryDate': _expiryDate,
-      'notificationSound': _notificationSound,
-    };
-
     context.pushNamed(
       AppRouter.therapySummaryRouteName,
-      extra: dataToPass,
+      extra: {
+        'drug': widget.currentDrug,
+        'frequency': widget.selectedFrequency,
+        'time': widget.selectedTime,
+        'repeat': widget.repeatAfter10Min,
+        'startDate': widget.startDate,
+        'endDate': widget.endDate,
+        'doseThreshold': _remainingDosesThreshold,
+        'expiryDate': _expiryDate,
+        'initialTherapy': widget.initialTherapy, // Pass it along for the final save/update
+      },
     );
   }
 
@@ -80,7 +93,7 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
     // The build method remains exactly the same as the previous correct version.
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: Text(widget.selectedDrug.name),
+        middle: Text(widget.currentDrug.name),
         previousPageTitle: 'Durata',
       ),
       child: SafeArea(
@@ -107,13 +120,6 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
               _buildDoseSelector(),
               const SizedBox(height: 30),
               _buildExpiryDateSelector(),
-              const SizedBox(height: 40),
-              const Text(
-                'Suono notifica:',
-                style: TextStyle(fontSize: 17),
-              ),
-              const SizedBox(height: 12),
-              _buildSoundSelector(),
               const SizedBox(height: 50),
               CupertinoButton.filled(
                 onPressed: _navigateToNextStep,
@@ -191,22 +197,6 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
           style: TextStyle(fontSize: 14, color: CupertinoColors.secondaryLabel),
         ),
       ],
-    );
-  }
-
-  Widget _buildSoundSelector() {
-    return CupertinoSegmentedControl<NotificationSound>(
-      children: const {
-        NotificationSound.standard: Padding(padding: EdgeInsets.all(12), child: Text('Standard')),
-        NotificationSound.forteConVibrazione: Padding(padding: EdgeInsets.all(12), child: Text('Forte con Vibrazione')),
-      },
-      onValueChanged: (NotificationSound value) {
-        setState(() {
-          _notificationSound = value;
-        });
-      },
-      groupValue: _notificationSound,
-      padding: EdgeInsets.zero,
     );
   }
 }

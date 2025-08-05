@@ -1,38 +1,76 @@
 import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:akora_app/data/models/drug_model.dart';
+import 'package:akora_app/data/sources/local/app_database.dart'; // Needed for the Therapy data class
+import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
-import 'package:akora_app/core/navigation/app_router.dart';
-import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 
 class TherapyFrequencyScreen extends StatefulWidget {
-  final Drug selectedDrug;
+  // For creating a new therapy, we pass the Drug selected from the search.
+  final Drug? selectedDrug;
+  // For editing an existing therapy, we pass the full Therapy object.
+  final Therapy? initialTherapy;
 
-  const TherapyFrequencyScreen({super.key, required this.selectedDrug});
+  const TherapyFrequencyScreen({
+    super.key,
+    this.selectedDrug,
+    this.initialTherapy,
+    // This assertion ensures that you must provide one or the other, but not both/neither.
+  }) : assert(selectedDrug != null || initialTherapy != null,
+            'Either selectedDrug or initialTherapy must be provided');
 
   @override
   State<TherapyFrequencyScreen> createState() => _TherapyFrequencyScreenState();
 }
 
 class _TherapyFrequencyScreenState extends State<TherapyFrequencyScreen> {
+  // Local state for this screen's selections
   TakingFrequency? _selectedFrequency;
+  
+  // A variable to hold the details of the drug being configured,
+  // regardless of whether we are in create or edit mode.
+  late Drug _currentDrug;
 
-  // This method updates the state when a frequency button is tapped.
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialTherapy != null) {
+      // --- EDIT MODE ---
+      // We are editing, so pre-fill the state from the existing therapy object.
+      _selectedFrequency = widget.initialTherapy!.takingFrequency;
+      
+      // We don't have a full 'Drug' object, so we create a temporary one
+      // from the therapy data to display in the UI.
+      _currentDrug = Drug(
+        id: 'therapy_${widget.initialTherapy!.id}', // A temporary, unique ID
+        name: widget.initialTherapy!.drugName,
+        dosage: widget.initialTherapy!.drugDosage,
+        // These fields are not stored in the Therapy table, so we use placeholders.
+        activeIngredient: '', 
+        quantityDescription: '', 
+        form: DrugForm.other, 
+      );
+
+    } else {
+      // --- CREATE MODE ---
+      // We are creating a new therapy, so use the drug passed from the search screen.
+      _currentDrug = widget.selectedDrug!;
+    }
+  }
+
   void _onFrequencySelected(TakingFrequency frequency) {
     setState(() {
       _selectedFrequency = frequency;
     });
   }
 
-  // This method handles the logic for the "Avanti" button.
   void _navigateToNextStep() {
-    // First, check if a frequency has been selected. If not, show an alert.
     if (_selectedFrequency == null) {
       showCupertinoDialog(
         context: context,
         builder: (context) => CupertinoAlertDialog(
           title: const Text('Selezione Mancante'),
-          content: const Text('Per favore, seleziona una frequenza di assunzione.'),
+          content: const Text('Per favore, seleziona una frequenza.'),
           actions: [
             CupertinoDialogAction(
               child: const Text('OK'),
@@ -42,28 +80,27 @@ class _TherapyFrequencyScreenState extends State<TherapyFrequencyScreen> {
           ],
         ),
       );
-      return; // Stop execution if nothing is selected
+      return;
     }
-
-    // If a selection was made, navigate to the next screen (ReminderTimeScreen).
-    // We pass both the drug and the selected frequency in a Map via the 'extra' parameter.
+    
+    // Navigate to the next screen (Reminder Time).
+    // We now also pass the initialTherapy object if we are in edit mode.
     context.pushNamed(
       AppRouter.reminderTimeRouteName,
       extra: {
-        'drug': widget.selectedDrug,
-        'frequency': _selectedFrequency!, // Use '!' because we've already checked for null.
+        'drug': _currentDrug, // Pass the drug details
+        'frequency': _selectedFrequency!,
+        'initialTherapy': widget.initialTherapy, // Will be null in create mode
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = CupertinoTheme.of(context);
-
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: Text(widget.selectedDrug.name), // Show drug name in the nav bar
-        previousPageTitle: 'Cerca', // Provides a back button title
+        middle: Text(_currentDrug.name), // Use the state variable _currentDrug
+        previousPageTitle: widget.initialTherapy != null ? 'Dettagli' : 'Cerca',
       ),
       child: SafeArea(
         child: Padding(
@@ -72,9 +109,8 @@ class _TherapyFrequencyScreenState extends State<TherapyFrequencyScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               const SizedBox(height: 10),
-              // Display the selected drug's full description for user context.
               Text(
-                widget.selectedDrug.fullDescription,
+                _currentDrug.fullDescription, // Use the state variable
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 18,
@@ -93,12 +129,10 @@ class _TherapyFrequencyScreenState extends State<TherapyFrequencyScreen> {
               ),
               const SizedBox(height: 30),
 
-              // --- Frequency Options ---
-              // Each button is built by the helper method below.
+              // Frequency Options will now show the pre-selected value in edit mode
               _buildFrequencyButton(
                 context: context,
                 text: 'Una volta al giorno',
-                frequency: TakingFrequency.onceDaily,
                 isSelected: _selectedFrequency == TakingFrequency.onceDaily,
                 onTap: () => _onFrequencySelected(TakingFrequency.onceDaily),
               ),
@@ -106,7 +140,6 @@ class _TherapyFrequencyScreenState extends State<TherapyFrequencyScreen> {
               _buildFrequencyButton(
                 context: context,
                 text: 'Due volte al giorno',
-                frequency: TakingFrequency.twiceDaily,
                 isSelected: _selectedFrequency == TakingFrequency.twiceDaily,
                 onTap: () => _onFrequencySelected(TakingFrequency.twiceDaily),
               ),
@@ -114,7 +147,6 @@ class _TherapyFrequencyScreenState extends State<TherapyFrequencyScreen> {
               _buildFrequencyButton(
                 context: context,
                 text: 'Una volta a settimana',
-                frequency: TakingFrequency.onceWeekly,
                 isSelected: _selectedFrequency == TakingFrequency.onceWeekly,
                 onTap: () => _onFrequencySelected(TakingFrequency.onceWeekly),
               ),
@@ -122,22 +154,18 @@ class _TherapyFrequencyScreenState extends State<TherapyFrequencyScreen> {
               _buildFrequencyButton(
                 context: context,
                 text: 'Altre opzioni...',
-                frequency: TakingFrequency.other,
                 isSelected: _selectedFrequency == TakingFrequency.other,
                 onTap: () {
                   _onFrequencySelected(TakingFrequency.other);
-                  // TODO: Implement UI for custom frequency input (dialog or new screen).
                   print('Altre opzioni selected');
                 },
               ),
-
-              const Spacer(), // Pushes the "Avanti" button to the bottom of the screen.
-
+              const Spacer(),
               CupertinoButton.filled(
                 onPressed: _navigateToNextStep,
                 child: const Text('Avanti'),
               ),
-              const SizedBox(height: 10), // Some padding at the very bottom.
+              const SizedBox(height: 10),
             ],
           ),
         ),
@@ -145,11 +173,10 @@ class _TherapyFrequencyScreenState extends State<TherapyFrequencyScreen> {
     );
   }
 
-  // Helper widget to build the selectable frequency buttons, reducing code duplication.
+  // This helper widget doesn't need any changes.
   Widget _buildFrequencyButton({
     required BuildContext context,
     required String text,
-    required TakingFrequency frequency,
     required bool isSelected,
     required VoidCallback onTap,
   }) {

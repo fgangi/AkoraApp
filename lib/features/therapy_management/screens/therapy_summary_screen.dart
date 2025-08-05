@@ -1,14 +1,10 @@
-// lib/features/therapy_management/screens/therapy_summary_screen.dart
-
-// --- NEW IMPORTS FOR DATABASE INTERACTION ---
-import 'package:akora_app/data/sources/local/app_database.dart';
-import 'package:akora_app/main.dart'; // To access the global 'db' instance
-import 'package:drift/drift.dart' show Value;
-
-// --- EXISTING IMPORTS ---
 import 'package:akora_app/core/navigation/app_router.dart';
+import 'package:akora_app/core/services/notification_service.dart';
 import 'package:akora_app/data/models/drug_model.dart';
+import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
+import 'package:akora_app/main.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'; // For TimeOfDay
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -16,7 +12,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class TherapySummaryScreen extends StatelessWidget {
-  final Drug selectedDrug;
+  // Data for both create and edit mode
+  final Drug currentDrug;
   final TakingFrequency selectedFrequency;
   final TimeOfDay selectedTime;
   final bool repeatAfter10Min;
@@ -24,11 +21,12 @@ class TherapySummaryScreen extends StatelessWidget {
   final DateTime endDate;
   final int doseThreshold;
   final DateTime? expiryDate;
-  final NotificationSound notificationSound;
+  // This will be non-null only in edit mode
+  final Therapy? initialTherapy;
 
   const TherapySummaryScreen({
     super.key,
-    required this.selectedDrug,
+    required this.currentDrug,
     required this.selectedFrequency,
     required this.selectedTime,
     required this.repeatAfter10Min,
@@ -36,10 +34,9 @@ class TherapySummaryScreen extends StatelessWidget {
     required this.endDate,
     required this.doseThreshold,
     this.expiryDate,
-    required this.notificationSound,
+    this.initialTherapy,
   });
 
-  // Helper function to format the frequency display text (no changes)
   String _formatFrequency(BuildContext context) {
     switch (selectedFrequency) {
       case TakingFrequency.onceDaily:
@@ -53,48 +50,63 @@ class TherapySummaryScreen extends StatelessWidget {
     }
   }
 
-  // --- UPDATED _saveAndConfirm METHOD ---
   Future<void> _saveAndConfirm(BuildContext context) async {
-    print('--- SAVING THERAPY TO LOCAL DRIFT/SQLITE DATABASE ---');
-
-    // Drift uses "Companion" objects for inserts and updates.
-    // They are type-safe and handle default values and nullability gracefully.
-    final therapyToInsert = TherapiesCompanion(
-      drugName: Value(selectedDrug.name),
-      drugDosage: Value(selectedDrug.dosage),
-      takingFrequency: Value(selectedFrequency),
-      reminderHour: Value(selectedTime.hour),
-      reminderMinute: Value(selectedTime.minute),
-      repeatAfter10Min: Value(repeatAfter10Min),
-      startDate: Value(startDate),
-      endDate: Value(endDate),
-      doseThreshold: Value(doseThreshold),
-      expiryDate: Value(expiryDate), // Drift correctly handles null values when wrapped in Value()
-      notificationSound: Value(notificationSound),
-      // isActive and isPaused will use their default values (true and false)
-    );
-
     try {
-      // Use the global 'db' instance (from main.dart) to call the create method
-      // that we defined in our AppDatabase class.
-      await db.createTherapy(therapyToInsert);
-      
-      print('--- THERAPY SUCCESSFULLY SAVED ---');
+      if (initialTherapy != null) {
+        // --- UPDATE LOGIC ---
+        print('--- UPDATING THERAPY ID: ${initialTherapy!.id} ---');
+        
+        await NotificationService().cancelTherapyNotifications(initialTherapy!);
+        
+        final updatedTherapy = initialTherapy!.copyWith(
+          takingFrequency: selectedFrequency,
+          reminderHour: selectedTime.hour,
+          reminderMinute: selectedTime.minute,
+          repeatAfter10Min: repeatAfter10Min,
+          startDate: startDate,
+          endDate: endDate,
+          doseThreshold: doseThreshold,
+          expiryDate: Value(expiryDate),
+        );
+        await db.updateTherapy(updatedTherapy);
 
-      // TODO: Schedule local notifications based on the saved data. This is the next major feature.
+        // Reschedule notifications with the updated information
+        await NotificationService().scheduleNotificationForTherapy(updatedTherapy);
+        
+        print('--- THERAPY SUCCESSFULLY UPDATED AND NOTIFICATIONS RESCHEDULED ---');
 
-      // After a successful save, navigate to the main home screen,
-      // clearing the entire setup flow from the navigation stack.
-      if (context.mounted) {
-        // Use context.goNamed() to replace the navigation stack so the user
-        // can't press 'back' to get into the setup flow again.
-        context.goNamed(AppRouter.homeRouteName);
+      } else {
+        // --- CREATE LOGIC ---
+        print('--- SAVING NEW THERAPY TO DATABASE ---');
+        
+        final therapyToInsert = TherapiesCompanion(
+          drugName: Value(currentDrug.name),
+          drugDosage: Value(currentDrug.dosage),
+          takingFrequency: Value(selectedFrequency),
+          reminderHour: Value(selectedTime.hour),
+          reminderMinute: Value(selectedTime.minute),
+          repeatAfter10Min: Value(repeatAfter10Min),
+          startDate: Value(startDate),
+          endDate: Value(endDate),
+          doseThreshold: Value(doseThreshold),
+          expiryDate: Value(expiryDate),
+        );
+        final newTherapyId = await db.createTherapy(therapyToInsert);
+        // Fetch the full new therapy object to pass to the notification service
+        final newTherapy = await db.getTherapyById(newTherapyId);
+        
+        print('--- THERAPY SUCCESSFULLY SAVED WITH ID: $newTherapyId ---');
+        
+        // Schedule notifications for the new therapy
+        await NotificationService().scheduleNotificationForTherapy(newTherapy);
       }
 
-    } catch (e) {
-      print('--- FAILED TO SAVE THERAPY TO LOCAL DB: $e ---');
-      
-      // Show an error dialog to the user if saving fails.
+      if (context.mounted) {
+        context.goNamed(AppRouter.homeRouteName);
+      }
+    } catch (e, s) {
+      print('--- FAILED TO SAVE/UPDATE THERAPY: $e ---');
+      print(s);
       if (context.mounted) {
         showCupertinoDialog(
           context: context,
@@ -147,10 +159,9 @@ class TherapySummaryScreen extends StatelessWidget {
                   children: [
                     _buildSummaryRow(
                       icon: FontAwesomeIcons.pills,
-                      text: selectedDrug.fullDescription,
+                      text: currentDrug.fullDescription,
                       onEdit: () {
                         print('Edit Drug tapped');
-                        // TODO: Implement navigation back to drug search
                       },
                     ),
                     _buildSummaryRow(
@@ -158,7 +169,6 @@ class TherapySummaryScreen extends StatelessWidget {
                       text: _formatFrequency(context),
                       onEdit: () {
                         print('Edit Time tapped');
-                        // TODO: Implement navigation back to frequency/time screens
                       },
                     ),
                     _buildSummaryRow(
@@ -166,7 +176,6 @@ class TherapySummaryScreen extends StatelessWidget {
                       text: 'Dal ${DateFormat('dd/MM/yyyy').format(startDate)} al ${DateFormat('dd/MM/yyyy').format(endDate)}',
                       onEdit: () {
                         print('Edit Duration tapped');
-                        // TODO: Implement navigation back to duration screen
                       },
                     ),
                     _buildSummaryRow(
@@ -174,7 +183,6 @@ class TherapySummaryScreen extends StatelessWidget {
                       text: 'Avviso a $doseThreshold dosi rimanenti',
                       onEdit: () {
                         print('Edit Dose Alert tapped');
-                        // TODO: Implement navigation back to dose/expiry screen
                       },
                     ),
                     if (expiryDate != null)
@@ -183,7 +191,6 @@ class TherapySummaryScreen extends StatelessWidget {
                         text: 'Notifica per scadenza 7 giorni prima',
                         onEdit: () {
                           print('Edit Expiry Alert tapped');
-                          // TODO: Implement navigation back to dose/expiry screen
                         },
                       ),
                   ],

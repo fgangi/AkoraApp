@@ -1,13 +1,16 @@
 // lib/features/therapy_management/screens/drug_search_screen.dart
 import 'package:akora_app/data/models/drug_model.dart';
+import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/data/sources/local/local_drug_data.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:akora_app/core/navigation/app_router.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // If you used FaIcon for QR
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DrugSearchScreen extends StatefulWidget {
-  const DrugSearchScreen({super.key});
+  final Therapy? initialTherapy;
+
+  const DrugSearchScreen({super.key, this.initialTherapy});
 
   @override
   State<DrugSearchScreen> createState() => _DrugSearchScreenState();
@@ -15,14 +18,34 @@ class DrugSearchScreen extends StatefulWidget {
 
 class _DrugSearchScreenState extends State<DrugSearchScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<Drug> _searchResults = []; // This expects List<Drug>
+  List<Drug> _searchResults = [];
   bool _isLoading = false;
 
   @override
   void initState() {
+
     super.initState();
+    _handleEditMode();
     _searchResults = [];
     _searchController.addListener(_performSearch);
+  }
+
+  void _handleEditMode() {
+    // Use a post-frame callback to ensure the widget is built before navigating.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return; // Add a safety check
+      if (widget.initialTherapy != null) {
+        print('DrugSearchScreen in EDIT mode. Forwarding to frequency screen...');
+        // If we are in edit mode, we don't show the search UI.
+        // We immediately navigate to the next screen, passing the initialTherapy.
+        context.pushReplacementNamed(
+          AppRouter.therapyFrequencyRouteName,
+          extra: {'initialTherapy': widget.initialTherapy}, // Pass in a map
+        );
+      } else {
+        print('DrugSearchScreen in CREATE mode.');
+      }
+    });
   }
 
   void _performSearch() {
@@ -57,22 +80,24 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
     super.dispose();
   }
 
-  void _scanQrCode() {
-    print('Scan QR Code tapped');
-    // TODO: Implement QR code scanning
-  }
-
   void _onDrugSelected(Drug selectedDrug) {
-    print('Drug selected: ${selectedDrug.fullDescription}');
-
-    // Navigate directly to the TherapyFrequencyScreen, passing the selected drug
-    context.pushNamed(AppRouter.therapyFrequencyRouteName, extra: selectedDrug);
+    // This method is only for CREATE mode.
+    context.pushNamed(
+      AppRouter.therapyFrequencyRouteName,
+      extra: {'selectedDrug': selectedDrug}, // Pass in a map
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // ... (build method remains the same as your last correct version)
-    final theme = CupertinoTheme.of(context);
+    // If we are in edit mode, we can show a loading indicator while we redirect.
+    if (widget.initialTherapy != null) {
+      return const CupertinoPageScaffold(
+        child: Center(
+          child: CupertinoActivityIndicator(),
+        ),
+      );
+    }
 
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
@@ -92,7 +117,7 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
                   ),
                   const SizedBox(height: 12),
                   const Text(
-                    'Inserisci il nome del farmaco o scansiona il QR code sulla confezione.',
+                    'Inserisci il nome del farmaco.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 16, color: CupertinoColors.secondaryLabel),
                   ),
@@ -147,45 +172,6 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
                   ),
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: CupertinoButton(
-                color: theme.primaryColor.withOpacity(0.1),
-                onPressed: _scanQrCode,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Scansiona',
-                            style: TextStyle(
-                              // color: theme.primaryColor, // Already default for CupertinoButton content
-                              fontWeight: FontWeight.bold,
-                              fontSize: 17,
-                            ),
-                          ),
-                          Text(
-                            'il Qr code sulla confezione',
-                            style: TextStyle(
-                              // color: theme.primaryColor.withOpacity(0.8),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    FaIcon(
-                      CupertinoIcons.qrcode,
-                      size: 50,
-                      // color: theme.primaryColor, // Already default
-                    ),
-                  ],
-                ),
-              ),
-            ),
           ],
         ),
       ),

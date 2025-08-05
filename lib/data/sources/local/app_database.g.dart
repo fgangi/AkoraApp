@@ -133,18 +133,6 @@ class $TherapiesTable extends Therapies
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
-  @override
-  late final GeneratedColumnWithTypeConverter<NotificationSound, String>
-  notificationSound =
-      GeneratedColumn<String>(
-        'notification_sound',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: true,
-      ).withConverter<NotificationSound>(
-        $TherapiesTable.$converternotificationSound,
-      );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -188,7 +176,6 @@ class $TherapiesTable extends Therapies
     endDate,
     doseThreshold,
     expiryDate,
-    notificationSound,
     isActive,
     isPaused,
   ];
@@ -356,12 +343,6 @@ class $TherapiesTable extends Therapies
         DriftSqlType.dateTime,
         data['${effectivePrefix}expiry_date'],
       ),
-      notificationSound: $TherapiesTable.$converternotificationSound.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}notification_sound'],
-        )!,
-      ),
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -380,8 +361,6 @@ class $TherapiesTable extends Therapies
 
   static TypeConverter<TakingFrequency, String> $convertertakingFrequency =
       const TakingFrequencyConverter();
-  static TypeConverter<NotificationSound, String> $converternotificationSound =
-      const NotificationSoundConverter();
 }
 
 class Therapy extends DataClass implements Insertable<Therapy> {
@@ -396,7 +375,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
   final DateTime endDate;
   final int doseThreshold;
   final DateTime? expiryDate;
-  final NotificationSound notificationSound;
   final bool isActive;
   final bool isPaused;
   const Therapy({
@@ -411,7 +389,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     required this.endDate,
     required this.doseThreshold,
     this.expiryDate,
-    required this.notificationSound,
     required this.isActive,
     required this.isPaused,
   });
@@ -435,11 +412,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     if (!nullToAbsent || expiryDate != null) {
       map['expiry_date'] = Variable<DateTime>(expiryDate);
     }
-    {
-      map['notification_sound'] = Variable<String>(
-        $TherapiesTable.$converternotificationSound.toSql(notificationSound),
-      );
-    }
     map['is_active'] = Variable<bool>(isActive);
     map['is_paused'] = Variable<bool>(isPaused);
     return map;
@@ -460,7 +432,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       expiryDate: expiryDate == null && nullToAbsent
           ? const Value.absent()
           : Value(expiryDate),
-      notificationSound: Value(notificationSound),
       isActive: Value(isActive),
       isPaused: Value(isPaused),
     );
@@ -485,9 +456,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       endDate: serializer.fromJson<DateTime>(json['endDate']),
       doseThreshold: serializer.fromJson<int>(json['doseThreshold']),
       expiryDate: serializer.fromJson<DateTime?>(json['expiryDate']),
-      notificationSound: serializer.fromJson<NotificationSound>(
-        json['notificationSound'],
-      ),
       isActive: serializer.fromJson<bool>(json['isActive']),
       isPaused: serializer.fromJson<bool>(json['isPaused']),
     );
@@ -507,9 +475,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       'endDate': serializer.toJson<DateTime>(endDate),
       'doseThreshold': serializer.toJson<int>(doseThreshold),
       'expiryDate': serializer.toJson<DateTime?>(expiryDate),
-      'notificationSound': serializer.toJson<NotificationSound>(
-        notificationSound,
-      ),
       'isActive': serializer.toJson<bool>(isActive),
       'isPaused': serializer.toJson<bool>(isPaused),
     };
@@ -527,7 +492,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     DateTime? endDate,
     int? doseThreshold,
     Value<DateTime?> expiryDate = const Value.absent(),
-    NotificationSound? notificationSound,
     bool? isActive,
     bool? isPaused,
   }) => Therapy(
@@ -542,7 +506,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     endDate: endDate ?? this.endDate,
     doseThreshold: doseThreshold ?? this.doseThreshold,
     expiryDate: expiryDate.present ? expiryDate.value : this.expiryDate,
-    notificationSound: notificationSound ?? this.notificationSound,
     isActive: isActive ?? this.isActive,
     isPaused: isPaused ?? this.isPaused,
   );
@@ -573,9 +536,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       expiryDate: data.expiryDate.present
           ? data.expiryDate.value
           : this.expiryDate,
-      notificationSound: data.notificationSound.present
-          ? data.notificationSound.value
-          : this.notificationSound,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       isPaused: data.isPaused.present ? data.isPaused.value : this.isPaused,
     );
@@ -595,7 +555,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
           ..write('endDate: $endDate, ')
           ..write('doseThreshold: $doseThreshold, ')
           ..write('expiryDate: $expiryDate, ')
-          ..write('notificationSound: $notificationSound, ')
           ..write('isActive: $isActive, ')
           ..write('isPaused: $isPaused')
           ..write(')'))
@@ -615,7 +574,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     endDate,
     doseThreshold,
     expiryDate,
-    notificationSound,
     isActive,
     isPaused,
   );
@@ -634,7 +592,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
           other.endDate == this.endDate &&
           other.doseThreshold == this.doseThreshold &&
           other.expiryDate == this.expiryDate &&
-          other.notificationSound == this.notificationSound &&
           other.isActive == this.isActive &&
           other.isPaused == this.isPaused);
 }
@@ -651,7 +608,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
   final Value<DateTime> endDate;
   final Value<int> doseThreshold;
   final Value<DateTime?> expiryDate;
-  final Value<NotificationSound> notificationSound;
   final Value<bool> isActive;
   final Value<bool> isPaused;
   const TherapiesCompanion({
@@ -666,7 +622,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     this.endDate = const Value.absent(),
     this.doseThreshold = const Value.absent(),
     this.expiryDate = const Value.absent(),
-    this.notificationSound = const Value.absent(),
     this.isActive = const Value.absent(),
     this.isPaused = const Value.absent(),
   });
@@ -682,7 +637,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     required DateTime endDate,
     required int doseThreshold,
     this.expiryDate = const Value.absent(),
-    required NotificationSound notificationSound,
     this.isActive = const Value.absent(),
     this.isPaused = const Value.absent(),
   }) : drugName = Value(drugName),
@@ -693,8 +647,7 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
        repeatAfter10Min = Value(repeatAfter10Min),
        startDate = Value(startDate),
        endDate = Value(endDate),
-       doseThreshold = Value(doseThreshold),
-       notificationSound = Value(notificationSound);
+       doseThreshold = Value(doseThreshold);
   static Insertable<Therapy> custom({
     Expression<int>? id,
     Expression<String>? drugName,
@@ -707,7 +660,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     Expression<DateTime>? endDate,
     Expression<int>? doseThreshold,
     Expression<DateTime>? expiryDate,
-    Expression<String>? notificationSound,
     Expression<bool>? isActive,
     Expression<bool>? isPaused,
   }) {
@@ -723,7 +675,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
       if (endDate != null) 'end_date': endDate,
       if (doseThreshold != null) 'dose_threshold': doseThreshold,
       if (expiryDate != null) 'expiry_date': expiryDate,
-      if (notificationSound != null) 'notification_sound': notificationSound,
       if (isActive != null) 'is_active': isActive,
       if (isPaused != null) 'is_paused': isPaused,
     });
@@ -741,7 +692,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     Value<DateTime>? endDate,
     Value<int>? doseThreshold,
     Value<DateTime?>? expiryDate,
-    Value<NotificationSound>? notificationSound,
     Value<bool>? isActive,
     Value<bool>? isPaused,
   }) {
@@ -757,7 +707,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
       endDate: endDate ?? this.endDate,
       doseThreshold: doseThreshold ?? this.doseThreshold,
       expiryDate: expiryDate ?? this.expiryDate,
-      notificationSound: notificationSound ?? this.notificationSound,
       isActive: isActive ?? this.isActive,
       isPaused: isPaused ?? this.isPaused,
     );
@@ -801,13 +750,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     if (expiryDate.present) {
       map['expiry_date'] = Variable<DateTime>(expiryDate.value);
     }
-    if (notificationSound.present) {
-      map['notification_sound'] = Variable<String>(
-        $TherapiesTable.$converternotificationSound.toSql(
-          notificationSound.value,
-        ),
-      );
-    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
@@ -831,7 +773,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
           ..write('endDate: $endDate, ')
           ..write('doseThreshold: $doseThreshold, ')
           ..write('expiryDate: $expiryDate, ')
-          ..write('notificationSound: $notificationSound, ')
           ..write('isActive: $isActive, ')
           ..write('isPaused: $isPaused')
           ..write(')'))
@@ -863,7 +804,6 @@ typedef $$TherapiesTableCreateCompanionBuilder =
       required DateTime endDate,
       required int doseThreshold,
       Value<DateTime?> expiryDate,
-      required NotificationSound notificationSound,
       Value<bool> isActive,
       Value<bool> isPaused,
     });
@@ -880,7 +820,6 @@ typedef $$TherapiesTableUpdateCompanionBuilder =
       Value<DateTime> endDate,
       Value<int> doseThreshold,
       Value<DateTime?> expiryDate,
-      Value<NotificationSound> notificationSound,
       Value<bool> isActive,
       Value<bool> isPaused,
     });
@@ -948,12 +887,6 @@ class $$TherapiesTableFilterComposer
   ColumnFilters<DateTime> get expiryDate => $composableBuilder(
     column: $table.expiryDate,
     builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnWithTypeConverterFilters<NotificationSound, NotificationSound, String>
-  get notificationSound => $composableBuilder(
-    column: $table.notificationSound,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnFilters<bool> get isActive => $composableBuilder(
@@ -1031,11 +964,6 @@ class $$TherapiesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get notificationSound => $composableBuilder(
-    column: $table.notificationSound,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
@@ -1104,12 +1032,6 @@ class $$TherapiesTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumnWithTypeConverter<NotificationSound, String>
-  get notificationSound => $composableBuilder(
-    column: $table.notificationSound,
-    builder: (column) => column,
-  );
-
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
@@ -1156,8 +1078,6 @@ class $$TherapiesTableTableManager
                 Value<DateTime> endDate = const Value.absent(),
                 Value<int> doseThreshold = const Value.absent(),
                 Value<DateTime?> expiryDate = const Value.absent(),
-                Value<NotificationSound> notificationSound =
-                    const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<bool> isPaused = const Value.absent(),
               }) => TherapiesCompanion(
@@ -1172,7 +1092,6 @@ class $$TherapiesTableTableManager
                 endDate: endDate,
                 doseThreshold: doseThreshold,
                 expiryDate: expiryDate,
-                notificationSound: notificationSound,
                 isActive: isActive,
                 isPaused: isPaused,
               ),
@@ -1189,7 +1108,6 @@ class $$TherapiesTableTableManager
                 required DateTime endDate,
                 required int doseThreshold,
                 Value<DateTime?> expiryDate = const Value.absent(),
-                required NotificationSound notificationSound,
                 Value<bool> isActive = const Value.absent(),
                 Value<bool> isPaused = const Value.absent(),
               }) => TherapiesCompanion.insert(
@@ -1204,7 +1122,6 @@ class $$TherapiesTableTableManager
                 endDate: endDate,
                 doseThreshold: doseThreshold,
                 expiryDate: expiryDate,
-                notificationSound: notificationSound,
                 isActive: isActive,
                 isPaused: isPaused,
               ),

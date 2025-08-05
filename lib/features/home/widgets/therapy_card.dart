@@ -1,4 +1,6 @@
 import 'package:akora_app/data/sources/local/app_database.dart';
+import 'package:akora_app/core/navigation/app_router.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'; // For TimeOfDay
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -15,8 +17,7 @@ class TherapyCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        // TODO: Navigate to a detailed view of this therapy
-        print('Tapped on therapy: ${therapy.drugName}');
+        context.pushNamed(AppRouter.therapyDetailRouteName, extra: therapy);
       },
       child: Container(
         padding: const EdgeInsets.all(16.0),

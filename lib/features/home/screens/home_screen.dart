@@ -1,4 +1,5 @@
 import 'package:akora_app/core/navigation/app_router.dart';
+import 'package:akora_app/core/services/notification_service.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/home/widgets/therapy_card.dart';
 import 'package:akora_app/main.dart';
@@ -22,12 +23,15 @@ class _HomeScreenState extends State<HomeScreen> {
     _therapiesStream = db.watchAllActiveTherapies();
   }
 
-  void _deleteTherapy(int therapyId) {
+  // --- UPDATED DELETE METHOD ---
+  // The method now takes the full Therapy object to have all necessary info for cancellation.
+  void _deleteTherapy(Therapy therapyToDelete) {
     showCupertinoDialog(
       context: context,
       builder: (ctx) => CupertinoAlertDialog(
         title: const Text('Conferma Eliminazione'),
-        content: const Text('Sei sicuro di voler eliminare questa terapia? Questa azione non può essere annullata.'),
+        content: const Text(
+            'Sei sicuro di voler eliminare questa terapia? Questa azione non può essere annullata.'),
         actions: [
           CupertinoDialogAction(
             child: const Text('Annulla'),
@@ -36,9 +40,17 @@ class _HomeScreenState extends State<HomeScreen> {
           CupertinoDialogAction(
             isDestructiveAction: true,
             child: const Text('Elimina'),
-            onPressed: () {
-              db.deleteTherapy(therapyId);
-              Navigator.pop(ctx);
+            onPressed: () async {
+              print('--- Deleting therapy and its notifications ---');
+              
+              // 1. First, cancel all notifications for this specific therapy.
+              //    We need the full therapy object to know the start and end dates.
+              await NotificationService().cancelTherapyNotifications(therapyToDelete);
+              
+              // 2. Then, delete the therapy from the database.
+              await db.deleteTherapy(therapyToDelete.id);
+              
+              if (mounted) Navigator.pop(ctx);
             },
           ),
         ],
@@ -47,20 +59,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _editTherapy(Therapy therapy) {
-    print('Editing therapy ID: ${therapy.id}');
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Funzione in Sviluppo'),
-        content: const Text('La modifica della terapia sarà disponibile a breve.'),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('OK'),
-            isDefaultAction: true,
-            onPressed: () => Navigator.pop(ctx),
-          )
-        ],
-      ),
+    print('Editing therapy ID: ${therapy.id} from swipe action.');
+    context.pushNamed(
+      AppRouter.addTherapyStartRouteName,
+      extra: therapy,
     );
   }
 
@@ -98,7 +100,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Text(
                     'Nessuna terapia attiva.\nTocca il pulsante + per aggiungerne una.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 18, color: CupertinoColors.secondaryLabel),
+                    style: TextStyle(
+                        fontSize: 18, color: CupertinoColors.secondaryLabel),
                   ),
                 ),
               );
@@ -108,10 +111,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemCount: therapies.length,
                 itemBuilder: (context, index) {
                   final therapy = therapies[index];
-                  // Use Padding for vertical spacing between cards.
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16.0),
-                    // ClipRRect is the key to rounding both the card and the actions behind it.
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12.0),
                       child: Slidable(
@@ -120,14 +121,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           motion: const BehindMotion(),
                           children: [
                             SlidableAction(
-                              onPressed: (buildContext) => _deleteTherapy(therapy.id),
+                              // Pass the full therapy object to the delete method.
+                              onPressed: (buildContext) =>
+                                  _deleteTherapy(therapy),
                               backgroundColor: CupertinoColors.destructiveRed,
                               foregroundColor: CupertinoColors.white,
                               icon: CupertinoIcons.delete,
                               label: 'Elimina',
                             ),
                             SlidableAction(
-                              onPressed: (buildContext) => _editTherapy(therapy),
+                              onPressed: (buildContext) =>
+                                  _editTherapy(therapy),
                               backgroundColor: CupertinoColors.systemBlue,
                               foregroundColor: CupertinoColors.white,
                               icon: CupertinoIcons.pencil,
