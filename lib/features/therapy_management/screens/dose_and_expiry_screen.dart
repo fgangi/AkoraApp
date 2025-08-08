@@ -35,6 +35,7 @@ class DoseAndExpiryScreen extends StatefulWidget {
 class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
   late int _remainingDosesThreshold;
   DateTime? _expiryDate;
+  final TextEditingController _initialDoseController = TextEditingController();
 
   @override
   void initState() {
@@ -43,14 +44,24 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
       // --- EDIT MODE ---
       _remainingDosesThreshold = widget.initialTherapy!.doseThreshold;
       _expiryDate = widget.initialTherapy!.expiryDate;
+      _initialDoseController.text = widget.initialTherapy!.dosesRemaining?.toString() ?? '';
     } else {
       // --- CREATE MODE ---
       _remainingDosesThreshold = 10;
       _expiryDate = DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day);
+      _initialDoseController.text = '20'; // A sensible default like 20 or 30
     }
   }
 
+  @override
+  void dispose() {
+    _initialDoseController.dispose();
+    super.dispose();
+  }
+
   void _navigateToNextStep() {
+    // Parse the initial dose count, with a fallback to null if empty or invalid
+    final int? initialDoses = int.tryParse(_initialDoseController.text);
     context.pushNamed(
       AppRouter.therapySummaryRouteName,
       extra: {
@@ -62,7 +73,8 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
         'endDate': widget.endDate,
         'doseThreshold': _remainingDosesThreshold,
         'expiryDate': _expiryDate,
-        'initialTherapy': widget.initialTherapy, // Pass it along for the final save/update
+        'initialDoses': initialDoses,
+        'initialTherapy': widget.initialTherapy,
       },
     );
   }
@@ -88,9 +100,8 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
     );
   }
 
-  @override
+    @override
   Widget build(BuildContext context) {
-    // The build method remains exactly the same as the previous correct version.
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(widget.currentDrug.name),
@@ -111,16 +122,50 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+
+              // --- Initial Dose Count section ---
               const SizedBox(height: 40),
               const Text(
-                'Ricevi un promemoria quando restano:',
-                style: TextStyle(fontSize: 17),
+                'Quante dosi ci sono nella confezione?',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: CupertinoColors.secondaryLabel,
+                ),
+              ),
+              const SizedBox(height: 8),
+              CupertinoTextField(
+                controller: _initialDoseController,
+                placeholder: 'Es. 20',
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.center,
+                padding: const EdgeInsets.all(12),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+              const SizedBox(height: 40),
+
+              // --- Low Dose Reminder section ---
+              const Text(
+                'Avvisami quando restano:', // Changed text for clarity
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: CupertinoColors.secondaryLabel,
+                ),
               ),
               const SizedBox(height: 12),
               _buildDoseSelector(),
-              const SizedBox(height: 30),
+              const SizedBox(height: 40),
+
+              // --- Expiry Date section ---
               _buildExpiryDateSelector(),
               const SizedBox(height: 50),
+
+              // --- Button section ---
               CupertinoButton.filled(
                 onPressed: _navigateToNextStep,
                 child: const Text('Avanti'),

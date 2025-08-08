@@ -114,6 +114,7 @@ class AppRouter {
             endDate: data['endDate'] as DateTime,
             doseThreshold: data['doseThreshold'] as int,
             expiryDate: data['expiryDate'] as DateTime?,
+            initialDoses: data['initialDoses'] as int?,
             initialTherapy: data['initialTherapy'] as Therapy?,
           );
         },

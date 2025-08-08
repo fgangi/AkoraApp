@@ -76,33 +76,6 @@ class NotificationService {
     debugPrint('Notification permissions request result: $result');
   }
 
-  // --- DEBUG METHOD ---
-  Future<void> scheduleTestNotification() async {
-    if (!_isInitialized) {
-      debugPrint("NotificationService not initialized. Cannot schedule test notification.");
-      return;
-    }
-    
-    debugPrint("--- Scheduling a test notification in 5 seconds... ---");
-    
-    // Explicitly use the now-guaranteed correct local timezone
-    final tz.TZDateTime scheduledDate = tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5));
-    debugPrint("Test notification will fire at: $scheduledDate"); // THIS MUST SHOW THE CORRECT OFFSET
-
-    await _plugin.zonedSchedule(
-      9999,
-      "Notifica di Prova",
-      "Se vedi questo messaggio, le notifiche funzionano!",
-      scheduledDate,
-      const NotificationDetails(
-        android: AndroidNotificationDetails('debug_channel', 'Debug Notifications'),
-        iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
-    debugPrint("--- Test notification has been scheduled. ---");
-  }
-
   // --- CORE APP SCHEDULING ---
   Future<void> scheduleNotificationForTherapy(Therapy therapy) async {
     if (!_isInitialized) {
@@ -158,6 +131,13 @@ class NotificationService {
         debugPrint('Scheduled notification $dailyId for $scheduledDate');
       }
     }
+  }
+
+  /// Cancels a single scheduled notification for a specific therapy on a specific day.
+  Future<void> cancelDailyNotification(int therapyId, DateTime day) async {
+    final int dailyId = _generateDailyId(therapyId, day);
+    await _plugin.cancel(dailyId);
+    debugPrint('Cancelled single notification with ID: $dailyId');
   }
 
   Future<void> cancelTherapyNotifications(Therapy therapy) async {

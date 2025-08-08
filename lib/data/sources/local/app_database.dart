@@ -41,6 +41,25 @@ class Therapies extends Table {
   // Therapy State (for features like pausing or deleting)
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   BoolColumn get isPaused => boolean().withDefault(const Constant(false))();
+
+  /// Tracking Supply
+  IntColumn get dosesRemaining => integer().nullable()(); // Can be null if user doesn't track
+}
+
+@DataClassName('MedicationLog')
+class MedicationLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  // Foreign key to link this log to a specific therapy
+  IntColumn get therapyId => integer().references(Therapies, #id)();
+
+  // The time the dose was *supposed* to be taken
+  DateTimeColumn get scheduledDoseTime => dateTime()();
+  
+  // The time the user actually marked it as taken
+  DateTimeColumn get actualTakenTime => dateTime()();
+
+  // Status of the dose (e.g., 'taken', 'skipped')
+  TextColumn get status => text()();
 }
 
 // --- ENUM CONVERTERS ---
@@ -56,14 +75,14 @@ class TakingFrequencyConverter extends TypeConverter<TakingFrequency, String> {
 
 // --- DATABASE CLASS ---
 // This annotation tells Drift to generate the necessary code for the 'Therapies' table.
-@DriftDatabase(tables: [Therapies])
+@DriftDatabase(tables: [Therapies, MedicationLogs])
 class AppDatabase extends _$AppDatabase {
   // Constructor. We pass the database connection to the superclass.
   AppDatabase() : super(_openConnection());
 
   // You must bump this number whenever you change the table structure (e.g., add a column).
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   // --- DATABASE METHODS (Data Access Object - DAO) ---
   
@@ -100,6 +119,75 @@ class AppDatabase extends _$AppDatabase {
   /// Gets a single therapy by its ID. Useful for the edit screen.
   Future<Therapy> getTherapyById(int id) {
     return (select(therapies)..where((t) => t.id.equals(id))).getSingle();
+  }
+
+  /// Logs a dose as taken for a specific therapy at a scheduled time.
+  Future<void> logDoseTaken({
+    required int therapyId,
+    required DateTime scheduledTime,
+  }) async {
+    final entry = MedicationLogsCompanion.insert(
+      therapyId: therapyId,
+      scheduledDoseTime: scheduledTime,
+      actualTakenTime: DateTime.now(), // Record the exact time it was logged
+      status: 'taken',
+    );
+    await into(medicationLogs).insert(entry);
+    
+    // Also, decrement the remaining dose count for that therapy
+    await _decrementDosesRemaining(therapyId);
+  }
+  
+  /// Helper to decrement the dose count.
+  Future<void> _decrementDosesRemaining(int therapyId) async {
+    // It finds the therapy with the given id and decrements the dosesRemaining column by 1.
+    final statement = update(therapies)..where((t) => t.id.equals(therapyId));
+    await statement.write(
+      TherapiesCompanion.custom(
+        dosesRemaining: therapies.dosesRemaining - const Constant(1),
+      ),
+    );
+  }
+
+  /// Watches the log for a specific therapy on a given day to see if it was taken.
+  /// Returns a stream of the log entry, or null if not found.
+  Stream<MedicationLog?> watchDoseLogForDay({
+    required int therapyId,
+    required DateTime day,
+  }) {
+    // We need to check for logs between the start and end of the given day.
+    final startOfDay = DateTime(day.year, day.month, day.day);
+    final endOfDay = DateTime(day.year, day.month, day.day, 23, 59, 59);
+
+    return (select(medicationLogs)
+          ..where((log) => log.therapyId.equals(therapyId))
+          ..where((log) => log.scheduledDoseTime.isBetween(Constant(startOfDay), Constant(endOfDay)))
+          ..limit(1))
+        .watchSingleOrNull();
+  }
+
+  Future<void> removeDoseLog({
+    required int therapyId,
+    required DateTime scheduledTime,
+  }) async {
+    // Delete the log entry that matches
+    await (delete(medicationLogs)
+          ..where((log) => log.therapyId.equals(therapyId))
+          ..where((log) => log.scheduledDoseTime.equals(scheduledTime)))
+        .go();
+    
+    // Also, increment the remaining dose count for that therapy
+    await _incrementDosesRemaining(therapyId);
+  }
+
+  Future<void> _incrementDosesRemaining(int therapyId) async {
+    // Find the therapy with the given id and increment the dosesRemaining column by 1.
+    final statement = update(therapies)..where((t) => t.id.equals(therapyId));
+    await statement.write(
+      TherapiesCompanion.custom(
+        dosesRemaining: therapies.dosesRemaining + const Constant(1),
+      ),
+    );
   }
 }
 

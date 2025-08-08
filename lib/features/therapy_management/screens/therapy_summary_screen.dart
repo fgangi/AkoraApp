@@ -21,6 +21,7 @@ class TherapySummaryScreen extends StatelessWidget {
   final DateTime endDate;
   final int doseThreshold;
   final DateTime? expiryDate;
+  final int? initialDoses;
   // This will be non-null only in edit mode
   final Therapy? initialTherapy;
 
@@ -34,6 +35,7 @@ class TherapySummaryScreen extends StatelessWidget {
     required this.endDate,
     required this.doseThreshold,
     this.expiryDate,
+    this.initialDoses,
     this.initialTherapy,
   });
 
@@ -67,6 +69,7 @@ class TherapySummaryScreen extends StatelessWidget {
           endDate: endDate,
           doseThreshold: doseThreshold,
           expiryDate: Value(expiryDate),
+          dosesRemaining: Value(initialDoses),
         );
         await db.updateTherapy(updatedTherapy);
 
@@ -90,6 +93,7 @@ class TherapySummaryScreen extends StatelessWidget {
           endDate: Value(endDate),
           doseThreshold: Value(doseThreshold),
           expiryDate: Value(expiryDate),
+          dosesRemaining: Value(initialDoses),
         );
         final newTherapyId = await db.createTherapy(therapyToInsert);
         // Fetch the full new therapy object to pass to the notification service
