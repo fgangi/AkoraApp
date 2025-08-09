@@ -1,27 +1,11 @@
-// lib/features/therapy_management/screens/therapy_duration_screen.dart
 import 'package:akora_app/core/navigation/app_router.dart';
-import 'package:akora_app/data/models/drug_model.dart';
-import 'package:akora_app/data/sources/local/app_database.dart'; // Import for Therapy
-import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
+import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart'; // For TimeOfDay
 import 'package:go_router/go_router.dart';
 
 class TherapyDurationScreen extends StatefulWidget {
-  final Drug currentDrug;
-  final TakingFrequency selectedFrequency;
-  final TimeOfDay selectedTime;
-  final bool repeatAfter10Min;
-  final Therapy? initialTherapy; // For Edit Mode
-
-  const TherapyDurationScreen({
-    super.key,
-    required this.currentDrug,
-    required this.selectedFrequency,
-    required this.selectedTime,
-    required this.repeatAfter10Min,
-    this.initialTherapy,
-  });
+  final TherapySetupData initialData;
+  const TherapyDurationScreen({super.key, required this.initialData});
 
   @override
   State<TherapyDurationScreen> createState() => _TherapyDurationScreenState();
@@ -34,33 +18,22 @@ class _TherapyDurationScreenState extends State<TherapyDurationScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.initialTherapy != null) {
-      // --- EDIT MODE ---
-      _startDate = widget.initialTherapy!.startDate;
-      _endDate = widget.initialTherapy!.endDate;
-    } else {
-      // --- CREATE MODE ---
-      _startDate = DateTime.now();
-      _endDate = DateTime.now().add(const Duration(days: 7));
-    }
+    _startDate = widget.initialData.startDate;
+    _endDate = widget.initialData.endDate;
   }
 
   void _navigateToNextStep() {
-    context.pushNamed(
-      AppRouter.doseAndExpiryRouteName,
-      extra: {
-        'drug': widget.currentDrug,
-        'frequency': widget.selectedFrequency,
-        'time': widget.selectedTime,
-        'repeat': widget.repeatAfter10Min,
-        'startDate': _startDate,
-        'endDate': _endDate,
-        'initialTherapy': widget.initialTherapy, // Pass it along
-      },
-    );
+    widget.initialData.startDate = _startDate;
+    widget.initialData.endDate = _endDate;
+
+    if (widget.initialData.isEditing) {
+      context.pop(widget.initialData);
+      return;
+    }
+
+    context.pushNamed(AppRouter.doseAndExpiryRouteName, extra: widget.initialData);
   }
 
-  // Helper to show a date picker
   void _showDatePicker(BuildContext context, {required bool isStartDate}) {
     showCupertinoModalPopup(
       context: context,
@@ -69,20 +42,16 @@ class _TherapyDurationScreenState extends State<TherapyDurationScreen> {
         color: CupertinoColors.systemBackground.resolveFrom(context),
         child: CupertinoDatePicker(
           initialDateTime: isStartDate ? _startDate : _endDate,
+          minimumDate: isStartDate ? null : _startDate.add(const Duration(days: 1)),
           mode: CupertinoDatePickerMode.date,
           onDateTimeChanged: (newDate) {
             setState(() {
               if (isStartDate) {
                 _startDate = newDate;
-                // Ensure end date is always after start date
                 if (_endDate.isBefore(_startDate)) {
                   _endDate = _startDate.add(const Duration(days: 1));
                 }
               } else {
-                // Ensure end date is not before start date
-                if (newDate.isBefore(_startDate)) {
-                  return; // Or show an error
-                }
                 _endDate = newDate;
               }
             });
@@ -96,8 +65,9 @@ class _TherapyDurationScreenState extends State<TherapyDurationScreen> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: Text(widget.currentDrug.name),
-        previousPageTitle: 'Orario',
+        middle: Text(widget.initialData.currentDrug.name),
+        previousPageTitle:
+            widget.initialData.initialTherapy != null ? 'Dettagli' : 'Orario',
       ),
       child: SafeArea(
         child: Padding(
@@ -115,28 +85,26 @@ class _TherapyDurationScreenState extends State<TherapyDurationScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-
-              // --- Start Date Section ---
-              const Text('INIZIO TERAPIA', style: TextStyle(fontWeight: FontWeight.bold, color: CupertinoColors.secondaryLabel)),
+              const Text('INIZIO TERAPIA',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: CupertinoColors.secondaryLabel)),
               const SizedBox(height: 8),
               _buildDateRow(
-                context: context,
                 date: _startDate,
                 onTap: () => _showDatePicker(context, isStartDate: true),
               ),
               const SizedBox(height: 30),
-
-              // --- End Date Section ---
-              const Text('FINE TERAPIA', style: TextStyle(fontWeight: FontWeight.bold, color: CupertinoColors.secondaryLabel)),
+              const Text('FINE TERAPIA',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: CupertinoColors.secondaryLabel)),
               const SizedBox(height: 8),
               _buildDateRow(
-                context: context,
                 date: _endDate,
                 onTap: () => _showDatePicker(context, isStartDate: false),
               ),
-
               const Spacer(),
-
               CupertinoButton.filled(
                 onPressed: _navigateToNextStep,
                 child: const Text('Avanti'),
@@ -149,33 +117,27 @@ class _TherapyDurationScreenState extends State<TherapyDurationScreen> {
     );
   }
 
-  // Helper to build the date display rows.
-  // The +/- buttons from the mockup would require more complex state management
-  // to increment/decrement day/month/year. We will use a standard picker for now.
-  Widget _buildDateRow({required BuildContext context, required DateTime date, required VoidCallback onTap}) {
+  Widget _buildDateRow({required DateTime date, required VoidCallback onTap}) {
     return CupertinoButton(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
       onPressed: onTap,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Using hardcoded month names for Italian, localization would be better
-          Text(
-            '${date.day} ${getMonthName(date.month)} ${date.year}',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: CupertinoColors.label,
-            ),
-          ),
-        ],
+      child: Text(
+        '${date.day} ${getMonthName(date.month)} ${date.year}',
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: CupertinoColors.label,
+        ),
       ),
     );
   }
 
   String getMonthName(int month) {
-    const months = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+    const months = [
+      'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+      'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
+    ];
     return months[month - 1];
   }
 }

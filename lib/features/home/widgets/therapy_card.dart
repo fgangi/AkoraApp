@@ -31,7 +31,7 @@ class _TherapyCardState extends State<TherapyCard> {
     );
   }
 
-  void _markAsTaken() {
+  void _markAsTaken() async { // Make the method async
     final now = DateTime.now();
     final scheduledTimeForToday = DateTime(
       now.year,
@@ -40,15 +40,29 @@ class _TherapyCardState extends State<TherapyCard> {
       widget.therapy.reminderHour,
       widget.therapy.reminderMinute,
     );
+
+    // We need to know what the count will be *after* we decrement it.
+    if (widget.therapy.dosesRemaining != null) {
+      final newDoseCount = widget.therapy.dosesRemaining! - 1;
+      
+      // Check if the new count has hit the threshold
+      if (newDoseCount == widget.therapy.doseThreshold) {
+        // If it has, trigger the low stock notification
+        await NotificationService().scheduleLowStockNotification(
+          therapyId: widget.therapy.id,
+          drugName: widget.therapy.drugName,
+          remainingDoses: newDoseCount,
+        );
+      }
+    }
     
-    // Log the dose in the database
-    db.logDoseTaken(
+    // Now, log the dose and decrement in the database
+    await db.logDoseTaken(
       therapyId: widget.therapy.id,
       scheduledTime: scheduledTimeForToday,
     );
-    
-    // --- Cancel today's upcoming notification ---
-    // If the user marks it as taken before the notification fires, cancel it.
+
+    // Cancel today's upcoming notification
     NotificationService().cancelDailyNotification(widget.therapy.id, DateTime.now());
   }
 

@@ -1,6 +1,7 @@
 import 'package:akora_app/data/models/drug_model.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
+import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart';
 
 // Import all screens
 import 'package:akora_app/features/scaffold/main_scaffold_screen.dart';
@@ -51,72 +52,41 @@ class AppRouter {
         path: '/${therapyFrequencyRouteName}',
         name: therapyFrequencyRouteName,
         builder: (BuildContext context, GoRouterState state) {
-          final Map<String, dynamic> data = state.extra as Map<String, dynamic>;
-          return TherapyFrequencyScreen(
-            selectedDrug: data['selectedDrug'] as Drug?,
-            initialTherapy: data['initialTherapy'] as Therapy?,
-          );
+          // This route now receives the fully-formed TherapySetupData object
+          final TherapySetupData data = state.extra as TherapySetupData;
+          return TherapyFrequencyScreen(initialData: data);
         },
       ),
       GoRoute(
         path: '/${reminderTimeRouteName}',
         name: reminderTimeRouteName,
         builder: (BuildContext context, GoRouterState state) {
-          final data = state.extra as Map<String, dynamic>;
-          return ReminderTimeScreen(
-            currentDrug: data['drug'] as Drug,
-            selectedFrequency: data['frequency'] as TakingFrequency,
-            initialTherapy: data['initialTherapy'] as Therapy?,
-          );
+          final TherapySetupData data = state.extra as TherapySetupData;
+          return ReminderTimeScreen(initialData: data);
         },
       ),
       GoRoute(
         path: '/${therapyDurationRouteName}',
         name: therapyDurationRouteName,
         builder: (BuildContext context, GoRouterState state) {
-          final data = state.extra as Map<String, dynamic>;
-          return TherapyDurationScreen(
-            currentDrug: data['drug'] as Drug,
-            selectedFrequency: data['frequency'] as TakingFrequency,
-            selectedTime: data['time'] as TimeOfDay,
-            repeatAfter10Min: data['repeat'] as bool,
-            initialTherapy: data['initialTherapy'] as Therapy?,
-          );
+          final TherapySetupData data = state.extra as TherapySetupData;
+          return TherapyDurationScreen(initialData: data);
         },
       ),
       GoRoute(
         path: '/${doseAndExpiryRouteName}',
         name: doseAndExpiryRouteName,
         builder: (BuildContext context, GoRouterState state) {
-          final data = state.extra as Map<String, dynamic>;
-          return DoseAndExpiryScreen(
-            currentDrug: data['drug'] as Drug,
-            selectedFrequency: data['frequency'] as TakingFrequency,
-            selectedTime: data['time'] as TimeOfDay,
-            repeatAfter10Min: data['repeat'] as bool,
-            startDate: data['startDate'] as DateTime,
-            endDate: data['endDate'] as DateTime,
-            initialTherapy: data['initialTherapy'] as Therapy?,
-          );
+          final TherapySetupData data = state.extra as TherapySetupData;
+          return DoseAndExpiryScreen(initialData: data);
         },
       ),
       GoRoute(
         path: '/${therapySummaryRouteName}',
         name: therapySummaryRouteName,
         builder: (BuildContext context, GoRouterState state) {
-          final data = state.extra as Map<String, dynamic>;
-          return TherapySummaryScreen(
-            currentDrug: data['drug'] as Drug,
-            selectedFrequency: data['frequency'] as TakingFrequency,
-            selectedTime: data['time'] as TimeOfDay,
-            repeatAfter10Min: data['repeat'] as bool,
-            startDate: data['startDate'] as DateTime,
-            endDate: data['endDate'] as DateTime,
-            doseThreshold: data['doseThreshold'] as int,
-            expiryDate: data['expiryDate'] as DateTime?,
-            initialDoses: data['initialDoses'] as int?,
-            initialTherapy: data['initialTherapy'] as Therapy?,
-          );
+          final TherapySetupData data = state.extra as TherapySetupData;
+          return TherapySummaryScreen(initialData: data);
         },
       ),
 

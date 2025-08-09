@@ -1,23 +1,12 @@
-// lib/features/therapy_management/screens/reminder_time_screen.dart
 import 'package:akora_app/core/navigation/app_router.dart';
-import 'package:akora_app/data/models/drug_model.dart';
-import 'package:akora_app/data/sources/local/app_database.dart'; // Import for Therapy
-import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
+import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart'; // Import for TimeOfDay
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class ReminderTimeScreen extends StatefulWidget {
-  final Drug currentDrug;
-  final TakingFrequency selectedFrequency;
-  final Therapy? initialTherapy; // For Edit Mode
-
-  const ReminderTimeScreen({
-    super.key,
-    required this.currentDrug,
-    required this.selectedFrequency,
-    this.initialTherapy,
-  });
+  final TherapySetupData initialData;
+  const ReminderTimeScreen({super.key, required this.initialData});
 
   @override
   State<ReminderTimeScreen> createState() => _ReminderTimeScreenState();
@@ -30,45 +19,29 @@ class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.initialTherapy != null) {
-      // --- EDIT MODE ---
-      // Pre-fill state from the existing therapy
-      _selectedDateTime = DateTime(
-        2000, 1, 1, // Use a dummy date
-        widget.initialTherapy!.reminderHour,
-        widget.initialTherapy!.reminderMinute,
-      );
-      _repeatAfter10Min = widget.initialTherapy!.repeatAfter10Min;
-    } else {
-      // --- CREATE MODE ---
-      // Use defaults
-      _selectedDateTime = DateTime(2000, 1, 1, 8, 30);
-      _repeatAfter10Min = false;
-    }
+    _selectedDateTime = DateTime(2000, 1, 1, widget.initialData.selectedTime.hour, widget.initialData.selectedTime.minute);
+    _repeatAfter10Min = widget.initialData.repeatAfter10Min;
   }
 
   void _navigateToNextStep() {
-    final selectedTime = TimeOfDay.fromDateTime(_selectedDateTime);
+    widget.initialData.selectedTime = TimeOfDay.fromDateTime(_selectedDateTime);
+    widget.initialData.repeatAfter10Min = _repeatAfter10Min;
 
-    context.pushNamed(
-      AppRouter.therapyDurationRouteName,
-      extra: {
-        'drug': widget.currentDrug,
-        'frequency': widget.selectedFrequency,
-        'time': selectedTime,
-        'repeat': _repeatAfter10Min,
-        'initialTherapy': widget.initialTherapy, // Pass it along
-      },
-    );
+    if (widget.initialData.isEditing) {
+      context.pop(widget.initialData);
+      return;
+    }
+    
+    context.pushNamed(AppRouter.therapyDurationRouteName, extra: widget.initialData);
   }
 
   @override
   Widget build(BuildContext context) {
-    // The build method does not need changes, it will use the pre-filled state
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: Text(widget.currentDrug.name),
-        previousPageTitle: 'Frequenza',
+        middle: Text(widget.initialData.currentDrug.name),
+        // Determine the back button title based on the mode.
+        previousPageTitle: widget.initialData.initialTherapy != null ? 'Dettagli' : 'Frequenza',
       ),
       child: SafeArea(
         child: Padding(
@@ -124,7 +97,6 @@ class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
     );
   }
 
-  // Helper widget for the switch row
   Widget _buildSwitchRow({required String text, required bool value, required ValueChanged<bool> onChanged}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),

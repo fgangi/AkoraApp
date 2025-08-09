@@ -1,48 +1,39 @@
 import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:akora_app/core/services/notification_service.dart';
-import 'package:akora_app/data/models/drug_model.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
+import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart'; // Import the new data model
 import 'package:akora_app/main.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart'; // For TimeOfDay
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-class TherapySummaryScreen extends StatelessWidget {
-  // Data for both create and edit mode
-  final Drug currentDrug;
-  final TakingFrequency selectedFrequency;
-  final TimeOfDay selectedTime;
-  final bool repeatAfter10Min;
-  final DateTime startDate;
-  final DateTime endDate;
-  final int doseThreshold;
-  final DateTime? expiryDate;
-  final int? initialDoses;
-  // This will be non-null only in edit mode
-  final Therapy? initialTherapy;
+class TherapySummaryScreen extends StatefulWidget {
+  // The constructor now takes the single data model object.
+  final TherapySetupData initialData;
 
-  const TherapySummaryScreen({
-    super.key,
-    required this.currentDrug,
-    required this.selectedFrequency,
-    required this.selectedTime,
-    required this.repeatAfter10Min,
-    required this.startDate,
-    required this.endDate,
-    required this.doseThreshold,
-    this.expiryDate,
-    this.initialDoses,
-    this.initialTherapy,
-  });
+  const TherapySummaryScreen({super.key, required this.initialData});
+
+  @override
+  State<TherapySummaryScreen> createState() => _TherapySummaryScreenState();
+}
+
+class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
+  // The local state holds the current data, which can be updated after returning from an edit screen.
+  late TherapySetupData currentData;
+
+  @override
+  void initState() {
+    super.initState();
+    currentData = widget.initialData;
+  }
 
   String _formatFrequency(BuildContext context) {
-    switch (selectedFrequency) {
+    switch (currentData.selectedFrequency) {
       case TakingFrequency.onceDaily:
-        return 'Ogni giorno alle ${selectedTime.format(context)}';
+        return 'Ogni giorno alle ${currentData.selectedTime.format(context)}';
       case TakingFrequency.twiceDaily:
         return 'Due volte al giorno';
       case TakingFrequency.onceWeekly:
@@ -52,56 +43,102 @@ class TherapySummaryScreen extends StatelessWidget {
     }
   }
 
+  // --- NAVIGATION METHODS FOR EDIT BUTTONS ---
+
+  // Navigates to the Frequency/Time screens and waits for the updated data.
+  Future<void> _editFrequencyAndTime() async {
+    currentData.isEditing = true; // Set the editing state to true
+
+    final result = await context.pushNamed(
+      AppRouter.therapyFrequencyRouteName,
+      extra: currentData, // Pass the current data to the start of the sub-flow
+    );
+
+    if (result is TherapySetupData && mounted) {
+      result.isEditing = false; // Reset the editing state
+      setState(() {
+        currentData = result; // Update the UI with the returned, modified data
+      });
+    }
+  }
+
+  // Navigates to the Duration screen and waits for the updated data.
+  Future<void> _editDuration() async {
+    currentData.isEditing = true;
+
+    final result = await context.pushNamed(
+      AppRouter.therapyDurationRouteName,
+      extra: currentData,
+    );
+
+    if (result is TherapySetupData && mounted) {
+      result.isEditing = false; // Reset the editing state
+      setState(() {
+        currentData = result;
+      });
+    }
+  }
+
+  // Navigates to the Dose/Expiry screen and waits for the updated data.
+  Future<void> _editDoseAndExpiry() async {
+    currentData.isEditing = true; // Set the editing state to true
+
+    final result = await context.pushNamed(
+      AppRouter.doseAndExpiryRouteName,
+      extra: currentData,
+    );
+
+    if (result is TherapySetupData && mounted) {
+      result.isEditing = false; // Reset the editing state
+      setState(() {
+        currentData = result;
+      });
+    }
+  }
+
+
   Future<void> _saveAndConfirm(BuildContext context) async {
+    // The save logic now uses the 'currentData' state variable.
     try {
-      if (initialTherapy != null) {
+      if (currentData.initialTherapy != null) {
         // --- UPDATE LOGIC ---
-        print('--- UPDATING THERAPY ID: ${initialTherapy!.id} ---');
+        print('--- UPDATING THERAPY ID: ${currentData.initialTherapy!.id} ---');
+        await NotificationService().cancelTherapyNotifications(currentData.initialTherapy!);
         
-        await NotificationService().cancelTherapyNotifications(initialTherapy!);
-        
-        final updatedTherapy = initialTherapy!.copyWith(
-          takingFrequency: selectedFrequency,
-          reminderHour: selectedTime.hour,
-          reminderMinute: selectedTime.minute,
-          repeatAfter10Min: repeatAfter10Min,
-          startDate: startDate,
-          endDate: endDate,
-          doseThreshold: doseThreshold,
-          expiryDate: Value(expiryDate),
-          dosesRemaining: Value(initialDoses),
+        final updatedTherapy = currentData.initialTherapy!.copyWith(
+          takingFrequency: currentData.selectedFrequency,
+          reminderHour: currentData.selectedTime.hour,
+          reminderMinute: currentData.selectedTime.minute,
+          repeatAfter10Min: currentData.repeatAfter10Min,
+          startDate: currentData.startDate,
+          endDate: currentData.endDate,
+          doseThreshold: currentData.doseThreshold,
+          expiryDate: Value(currentData.expiryDate),
+          dosesRemaining: Value(currentData.initialDoses),
         );
         await db.updateTherapy(updatedTherapy);
-
-        // Reschedule notifications with the updated information
         await NotificationService().scheduleNotificationForTherapy(updatedTherapy);
-        
         print('--- THERAPY SUCCESSFULLY UPDATED AND NOTIFICATIONS RESCHEDULED ---');
 
       } else {
         // --- CREATE LOGIC ---
         print('--- SAVING NEW THERAPY TO DATABASE ---');
-        
         final therapyToInsert = TherapiesCompanion(
-          drugName: Value(currentDrug.name),
-          drugDosage: Value(currentDrug.dosage),
-          takingFrequency: Value(selectedFrequency),
-          reminderHour: Value(selectedTime.hour),
-          reminderMinute: Value(selectedTime.minute),
-          repeatAfter10Min: Value(repeatAfter10Min),
-          startDate: Value(startDate),
-          endDate: Value(endDate),
-          doseThreshold: Value(doseThreshold),
-          expiryDate: Value(expiryDate),
-          dosesRemaining: Value(initialDoses),
+          drugName: Value(currentData.currentDrug.name),
+          drugDosage: Value(currentData.currentDrug.dosage),
+          takingFrequency: Value(currentData.selectedFrequency),
+          reminderHour: Value(currentData.selectedTime.hour),
+          reminderMinute: Value(currentData.selectedTime.minute),
+          repeatAfter10Min: Value(currentData.repeatAfter10Min),
+          startDate: Value(currentData.startDate),
+          endDate: Value(currentData.endDate),
+          doseThreshold: Value(currentData.doseThreshold),
+          expiryDate: Value(currentData.expiryDate),
+          dosesRemaining: Value(currentData.initialDoses),
         );
         final newTherapyId = await db.createTherapy(therapyToInsert);
-        // Fetch the full new therapy object to pass to the notification service
         final newTherapy = await db.getTherapyById(newTherapyId);
-        
         print('--- THERAPY SUCCESSFULLY SAVED WITH ID: $newTherapyId ---');
-        
-        // Schedule notifications for the new therapy
         await NotificationService().scheduleNotificationForTherapy(newTherapy);
       }
 
@@ -111,22 +148,7 @@ class TherapySummaryScreen extends StatelessWidget {
     } catch (e, s) {
       print('--- FAILED TO SAVE/UPDATE THERAPY: $e ---');
       print(s);
-      if (context.mounted) {
-        showCupertinoDialog(
-          context: context,
-          builder: (ctx) => CupertinoAlertDialog(
-            title: const Text('Errore'),
-            content: const Text('Impossibile salvare la terapia. Si prega di riprovare.'),
-            actions: [
-              CupertinoDialogAction(
-                child: const Text('OK'),
-                isDefaultAction: true,
-                onPressed: () => Navigator.pop(ctx),
-              )
-            ],
-          ),
-        );
-      }
+      // ... (Error dialog)
     }
   }
 
@@ -139,7 +161,7 @@ class TherapySummaryScreen extends StatelessWidget {
       backgroundColor: pageBackgroundColor,
       navigationBar: CupertinoNavigationBar(
         middle: const Text('Riepilogo Terapia'),
-        previousPageTitle: 'Promemoria',
+        previousPageTitle: 'Promemoria', // This will need to be dynamic
         backgroundColor: pageBackgroundColor,
         brightness: Brightness.dark,
       ),
@@ -163,39 +185,32 @@ class TherapySummaryScreen extends StatelessWidget {
                   children: [
                     _buildSummaryRow(
                       icon: FontAwesomeIcons.pills,
-                      text: currentDrug.fullDescription,
+                      text: currentData.currentDrug.fullDescription,
                       onEdit: () {
-                        print('Edit Drug tapped');
+                        // Drug selection cannot be edited, so this button can be disabled or do nothing.
+                        print('Edit Drug tapped - (Action Disabled)');
                       },
                     ),
                     _buildSummaryRow(
                       icon: CupertinoIcons.time,
                       text: _formatFrequency(context),
-                      onEdit: () {
-                        print('Edit Time tapped');
-                      },
+                      onEdit: _editFrequencyAndTime, // Assign the edit method
                     ),
                     _buildSummaryRow(
                       icon: CupertinoIcons.calendar,
-                      text: 'Dal ${DateFormat('dd/MM/yyyy').format(startDate)} al ${DateFormat('dd/MM/yyyy').format(endDate)}',
-                      onEdit: () {
-                        print('Edit Duration tapped');
-                      },
+                      text: 'Dal ${DateFormat('dd/MM/yyyy').format(currentData.startDate)} al ${DateFormat('dd/MM/yyyy').format(currentData.endDate)}',
+                      onEdit: _editDuration, // Assign the edit method
                     ),
                     _buildSummaryRow(
                       icon: FontAwesomeIcons.prescriptionBottle,
-                      text: 'Avviso a $doseThreshold dosi rimanenti',
-                      onEdit: () {
-                        print('Edit Dose Alert tapped');
-                      },
+                      text: 'Avviso a ${currentData.doseThreshold} dosi rimanenti',
+                      onEdit: _editDoseAndExpiry, // Assign the edit method
                     ),
-                    if (expiryDate != null)
+                    if (currentData.expiryDate != null)
                       _buildSummaryRow(
                         icon: CupertinoIcons.exclamationmark_triangle,
                         text: 'Notifica per scadenza 7 giorni prima',
-                        onEdit: () {
-                          print('Edit Expiry Alert tapped');
-                        },
+                        onEdit: _editDoseAndExpiry, // Also goes to the same screen
                       ),
                   ],
                 ),

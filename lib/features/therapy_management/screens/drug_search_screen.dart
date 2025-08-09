@@ -1,15 +1,16 @@
-// lib/features/therapy_management/screens/drug_search_screen.dart
+import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:akora_app/data/models/drug_model.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/data/sources/local/local_drug_data.dart';
+import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
+import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart'; 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:akora_app/core/navigation/app_router.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class DrugSearchScreen extends StatefulWidget {
   final Therapy? initialTherapy;
-
   const DrugSearchScreen({super.key, this.initialTherapy});
 
   @override
@@ -23,29 +24,35 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
 
   @override
   void initState() {
-
     super.initState();
     _handleEditMode();
-    _searchResults = [];
     _searchController.addListener(_performSearch);
   }
 
   void _handleEditMode() {
-    // Use a post-frame callback to ensure the widget is built before navigating.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return; // Add a safety check
+      if (!mounted) return;
       if (widget.initialTherapy != null) {
-        print('DrugSearchScreen in EDIT mode. Forwarding to frequency screen...');
-        // If we are in edit mode, we don't show the search UI.
-        // We immediately navigate to the next screen, passing the initialTherapy.
-        context.pushReplacementNamed(
-          AppRouter.therapyFrequencyRouteName,
-          extra: {'initialTherapy': widget.initialTherapy}, // Pass in a map
-        );
-      } else {
-        print('DrugSearchScreen in CREATE mode.');
+        final setupData = TherapySetupData.fromTherapy(widget.initialTherapy!);
+        context.pushReplacementNamed(AppRouter.therapyFrequencyRouteName, extra: setupData);
       }
     });
+  }
+
+  void _onDrugSelected(Drug selectedDrug) {
+    final setupData = TherapySetupData(
+      currentDrug: selectedDrug,
+      selectedFrequency: TakingFrequency.onceDaily,
+      selectedTime: const TimeOfDay(hour: 8, minute: 30),
+      repeatAfter10Min: false,
+      startDate: DateTime.now(),
+      endDate: DateTime.now().add(const Duration(days: 7)),
+      doseThreshold: 10,
+      initialDoses: 20,
+      expiryDate: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
+      initialTherapy: null,
+    );
+    context.pushNamed(AppRouter.therapyFrequencyRouteName, extra: setupData);
   }
 
   void _performSearch() {
@@ -56,13 +63,11 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
 
     Future.delayed(const Duration(milliseconds: 100), () {
       final List<Drug> results = query.isEmpty
-          ? <Drug>[] // Typed empty list
+          ? <Drug>[]
           : sampleItalianDrugs.where((drug) {
-              return drug.name.toLowerCase().contains(query) ||
-                     drug.activeIngredient.toLowerCase().contains(query) ||
-                     drug.dosage.toLowerCase().contains(query) ||
-                     drug.fullDescription.toLowerCase().contains(query);
-            }).toList().cast<Drug>();
+              return drug.fullDescription.toLowerCase().contains(query) ||
+                  drug.activeIngredient.toLowerCase().contains(query);
+            }).toList(); // cast<Drug>() is often not needed here but is safe
 
       if (mounted) {
         setState(() {
@@ -80,47 +85,33 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
     super.dispose();
   }
 
-  void _onDrugSelected(Drug selectedDrug) {
-    // This method is only for CREATE mode.
-    context.pushNamed(
-      AppRouter.therapyFrequencyRouteName,
-      extra: {'selectedDrug': selectedDrug}, // Pass in a map
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    // If we are in edit mode, we can show a loading indicator while we redirect.
     if (widget.initialTherapy != null) {
       return const CupertinoPageScaffold(
-        child: Center(
-          child: CupertinoActivityIndicator(),
-        ),
+        child: Center(child: CupertinoActivityIndicator()),
       );
     }
 
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Cerca Farmaco'),
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text('Cerca Farmaco'),
+        leading: CupertinoNavigationBarBackButton(
+          onPressed: () => context.pop(),
+        ),
       ),
       child: SafeArea(
+        // Use a Column to separate the fixed search bar from the scrollable results.
         child: Column(
           children: [
+            // --- This is the fixed top part ---
             Padding(
               padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
               child: Column(
                 children: [
-                  const Text(
-                    'CERCA IL TUO FARMACO',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
+                  const Text('CERCA IL TUO FARMACO', /* ... */),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Inserisci il nome del farmaco.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: CupertinoColors.secondaryLabel),
-                  ),
+                  const Text('Inserisci il nome del farmaco.', /* ... */),
                   const SizedBox(height: 20),
                   CupertinoSearchTextField(
                     controller: _searchController,
@@ -129,49 +120,50 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
                 ],
               ),
             ),
-            if (_isLoading)
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Center(child: CupertinoActivityIndicator()),
-              )
-            else if (_searchResults.isEmpty && _searchController.text.isNotEmpty)
-              const Expanded(
-                child: Center(
+
+            // --- This is the dynamic, scrollable bottom part ---
+            // The Expanded widget is crucial. It tells the child (the list or message)
+            // to take up all the REMAINING vertical space.
+            Expanded(
+              child: () {
+                if (_isLoading) {
+                  return const Center(child: CupertinoActivityIndicator());
+                }
+                if (_searchResults.isNotEmpty) {
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    itemCount: _searchResults.length,
+                    itemBuilder: (context, index) {
+                      final drug = _searchResults[index];
+                      // The Padding here provides spacing between items
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: _buildDrugResultItem(
+                          icon: drug.icon,
+                          title: drug.fullDescription,
+                          subtitle: drug.subtitle,
+                          onTap: () => _onDrugSelected(drug),
+                        ),
+                      );
+                    },
+                  );
+                }
+                if (_searchController.text.isNotEmpty) {
+                  return const Center(child: Text('Nessun farmaco trovato.'));
+                }
+                // Default empty state
+                return const Center(
                   child: Padding(
                     padding: EdgeInsets.all(16.0),
-                    child: Text('Nessun farmaco trovato.'),
-                  ),
-                ),
-              )
-            else if (_searchResults.isNotEmpty)
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  itemCount: _searchResults.length,
-                  itemBuilder: (context, index) {
-                    final drug = _searchResults[index];
-                    return _buildDrugResultItem(
-                      icon: drug.icon,
-                      title: drug.fullDescription,
-                      subtitle: drug.subtitle,
-                      onTap: () => _onDrugSelected(drug),
-                    );
-                  },
-                ),
-              )
-            else
-              Expanded(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
                     child: Text(
                       'Inizia a digitare per cercare un farmaco.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: CupertinoColors.systemGrey),
                     ),
                   ),
-                ),
-              ),
+                );
+              }(),
+            ),
           ],
         ),
       ),
@@ -186,17 +178,18 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
   }) {
     return GestureDetector(
       onTap: onTap,
+      // The Container itself is well-behaved and won't expand infinitely.
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
-        margin: const EdgeInsets.only(bottom: 8.0),
+        // REMOVED the margin from here. Spacing is now handled by the Padding in ListView.builder.
+        // margin: const EdgeInsets.only(bottom: 8.0), 
         decoration: BoxDecoration(
           color: CupertinoColors.tertiarySystemGroupedBackground.resolveFrom(context),
           borderRadius: BorderRadius.circular(10.0),
         ),
         child: Row(
           children: [
-            FaIcon(icon, color: CupertinoTheme.of(context).primaryColor, size: 28), // Use FaIcon if icons are FontAwesome
-            // Icon(icon, color: CupertinoTheme.of(context).primaryColor, size: 28), // Use Icon for CupertinoIcons
+            FaIcon(icon, color: CupertinoTheme.of(context).primaryColor, size: 28),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

@@ -1,32 +1,12 @@
-// lib/features/therapy_management/screens/dose_and_expiry_screen.dart
 import 'package:akora_app/core/navigation/app_router.dart';
-import 'package:akora_app/data/models/drug_model.dart';
-import 'package:akora_app/data/sources/local/app_database.dart'; // Import for Therapy
-import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
+import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart'; // For TimeOfDay
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class DoseAndExpiryScreen extends StatefulWidget {
-  final Drug currentDrug;
-  final TakingFrequency selectedFrequency;
-  final TimeOfDay selectedTime;
-  final bool repeatAfter10Min;
-  final DateTime startDate;
-  final DateTime endDate;
-  final Therapy? initialTherapy; // For Edit Mode
-
-  const DoseAndExpiryScreen({
-    super.key,
-    required this.currentDrug,
-    required this.selectedFrequency,
-    required this.selectedTime,
-    required this.repeatAfter10Min,
-    required this.startDate,
-    required this.endDate,
-    this.initialTherapy,
-  });
+  final TherapySetupData initialData;
+  const DoseAndExpiryScreen({super.key, required this.initialData});
 
   @override
   State<DoseAndExpiryScreen> createState() => _DoseAndExpiryScreenState();
@@ -40,17 +20,9 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.initialTherapy != null) {
-      // --- EDIT MODE ---
-      _remainingDosesThreshold = widget.initialTherapy!.doseThreshold;
-      _expiryDate = widget.initialTherapy!.expiryDate;
-      _initialDoseController.text = widget.initialTherapy!.dosesRemaining?.toString() ?? '';
-    } else {
-      // --- CREATE MODE ---
-      _remainingDosesThreshold = 10;
-      _expiryDate = DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day);
-      _initialDoseController.text = '20'; // A sensible default like 20 or 30
-    }
+    _remainingDosesThreshold = widget.initialData.doseThreshold;
+    _expiryDate = widget.initialData.expiryDate;
+    _initialDoseController.text = widget.initialData.initialDoses?.toString() ?? '';
   }
 
   @override
@@ -60,26 +32,18 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
   }
 
   void _navigateToNextStep() {
-    // Parse the initial dose count, with a fallback to null if empty or invalid
-    final int? initialDoses = int.tryParse(_initialDoseController.text);
-    context.pushNamed(
-      AppRouter.therapySummaryRouteName,
-      extra: {
-        'drug': widget.currentDrug,
-        'frequency': widget.selectedFrequency,
-        'time': widget.selectedTime,
-        'repeat': widget.repeatAfter10Min,
-        'startDate': widget.startDate,
-        'endDate': widget.endDate,
-        'doseThreshold': _remainingDosesThreshold,
-        'expiryDate': _expiryDate,
-        'initialDoses': initialDoses,
-        'initialTherapy': widget.initialTherapy,
-      },
-    );
+    widget.initialData.doseThreshold = _remainingDosesThreshold;
+    widget.initialData.expiryDate = _expiryDate;
+    widget.initialData.initialDoses = int.tryParse(_initialDoseController.text);
+
+    if (widget.initialData.isEditing) {
+      context.pop(widget.initialData);
+      return;
+    }
+
+    context.pushNamed(AppRouter.therapySummaryRouteName, extra: widget.initialData);
   }
 
-  // Helper to show a date picker for expiry date
   void _showExpiryDatePicker(BuildContext context) {
     showCupertinoModalPopup(
       context: context,
@@ -100,12 +64,13 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
     );
   }
 
-    @override
+  @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: Text(widget.currentDrug.name),
-        previousPageTitle: 'Durata',
+        middle: Text(widget.initialData.currentDrug.name),
+        previousPageTitle:
+            widget.initialData.initialTherapy != null ? 'Dettagli' : 'Durata',
       ),
       child: SafeArea(
         child: SingleChildScrollView(
@@ -122,8 +87,6 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
-              // --- Initial Dose Count section ---
               const SizedBox(height: 40),
               const Text(
                 'Quante dosi ci sono nella confezione?',
@@ -147,10 +110,8 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-
-              // --- Low Dose Reminder section ---
               const Text(
-                'Avvisami quando restano:', // Changed text for clarity
+                'Avvisami quando restano:',
                 style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
@@ -160,12 +121,8 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
               const SizedBox(height: 12),
               _buildDoseSelector(),
               const SizedBox(height: 40),
-
-              // --- Expiry Date section ---
               _buildExpiryDateSelector(),
               const SizedBox(height: 50),
-
-              // --- Button section ---
               CupertinoButton.filled(
                 onPressed: _navigateToNextStep,
                 child: const Text('Avanti'),
@@ -178,8 +135,6 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
     );
   }
 
-  // All helper methods (_buildDoseSelector, _buildExpiryDateSelector, _buildSoundSelector)
-  // remain exactly the same as before.
   Widget _buildDoseSelector() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -208,7 +163,7 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
           child: const Icon(CupertinoIcons.add),
         ),
         const SizedBox(width: 8),
-        const Text('Compresse', style: TextStyle(color: CupertinoColors.secondaryLabel)),
+        const Text('Dosi', style: TextStyle(color: CupertinoColors.secondaryLabel)),
       ],
     );
   }

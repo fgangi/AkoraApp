@@ -25,7 +25,6 @@ class NotificationService {
   Future<void> init() async {
     if (_isInitialized) return;
 
-    // --- 2. THE DEFINITIVE TIMEZONE FIX ---
     tz.initializeTimeZones();
     try {
       // Get the timezone from the native side of the device
@@ -131,6 +130,40 @@ class NotificationService {
         debugPrint('Scheduled notification $dailyId for $scheduledDate');
       }
     }
+  }
+
+  Future<void> scheduleLowStockNotification({
+    required int therapyId,
+    required String drugName,
+    required int remainingDoses,
+  }) async {
+    // We use a unique, high-number ID for this type of notification
+    // to avoid clashes with daily reminder IDs. Let's use negative IDs.
+    final int lowStockId = -therapyId;
+
+    await _plugin.show(
+      lowStockId,
+      'Scorte in Esaurimento: $drugName',
+      'Sono rimaste solo $remainingDoses dosi. È ora di acquistare una nuova confezione.',
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'low_stock_channel_id',
+          'Low Stock Alerts',
+          channelDescription: 'Notifications for when medication is running low.',
+          importance: Importance.high, // High importance, but not max like a reminder
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+          // You could use a different sound for this type of alert
+          // sound: 'alert.wav',
+        ),
+      ),
+      payload: 'low_stock_$therapyId', // Optional payload for navigation
+    );
+    debugPrint('Scheduled low stock notification for therapy ID: $therapyId');
   }
 
   /// Cancels a single scheduled notification for a specific therapy on a specific day.
