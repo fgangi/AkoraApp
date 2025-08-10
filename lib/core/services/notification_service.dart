@@ -6,7 +6,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_native_timezone/flutter_native_timezone.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 @pragma('vm:entry-point')
 void onDidReceiveBackgroundNotificationResponse(NotificationResponse notificationResponse) {
@@ -28,7 +28,7 @@ class NotificationService {
     tz.initializeTimeZones();
     try {
       // Get the timezone from the native side of the device
-      final String timeZoneName = await FlutterNativeTimezone.getLocalTimezone();
+      final String timeZoneName = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(timeZoneName));
       debugPrint("Timezone successfully initialized to: $timeZoneName");
     } catch (e) {
