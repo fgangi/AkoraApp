@@ -31,17 +31,20 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
     super.dispose();
   }
 
-  void _navigateToNextStep() {
-    widget.initialData.doseThreshold = _remainingDosesThreshold;
-    widget.initialData.expiryDate = _expiryDate;
-    widget.initialData.initialDoses = int.tryParse(_initialDoseController.text);
+  void _onConfirm() {
+    final updatedData = widget.initialData
+      ..doseThreshold = _remainingDosesThreshold
+      ..expiryDate = _expiryDate
+      ..initialDoses = int.tryParse(_initialDoseController.text);
 
-    if (widget.initialData.isEditing) {
-      context.pop(widget.initialData);
-      return;
+    if (widget.initialData.isSingleEditMode) {
+      context.pop(updatedData);
+    } else {
+      context.pushNamed(
+        AppRouter.therapySummaryRouteName,
+        extra: updatedData,
+      );
     }
-
-    context.pushNamed(AppRouter.therapySummaryRouteName, extra: widget.initialData);
   }
 
   void _showExpiryDatePicker(BuildContext context) {
@@ -55,9 +58,7 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
           minimumDate: DateTime.now(),
           mode: CupertinoDatePickerMode.date,
           onDateTimeChanged: (newDate) {
-            setState(() {
-              _expiryDate = newDate;
-            });
+            setState(() { _expiryDate = newDate; });
           },
         ),
       ),
@@ -69,8 +70,7 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(widget.initialData.currentDrug.name),
-        previousPageTitle:
-            widget.initialData.initialTherapy != null ? 'Dettagli' : 'Durata',
+        previousPageTitle: widget.initialData.isSingleEditMode ? 'Riepilogo' : 'Durata',
       ),
       child: SafeArea(
         child: SingleChildScrollView(
@@ -80,22 +80,12 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
             children: <Widget>[
               const SizedBox(height: 30),
               const Text(
-                'ATTIVA PROMEMORIA PER DOSI E SCADENZA',
+                'PROMEMORIA DOSI E SCADENZA',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 40),
-              const Text(
-                'Quante dosi ci sono nella confezione?',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: CupertinoColors.secondaryLabel,
-                ),
-              ),
+              const Text('Quante dosi ci sono nella confezione?', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: CupertinoColors.secondaryLabel)),
               const SizedBox(height: 8),
               CupertinoTextField(
                 controller: _initialDoseController,
@@ -110,22 +100,15 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-              const Text(
-                'Avvisami quando restano:',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: CupertinoColors.secondaryLabel,
-                ),
-              ),
+              const Text('Avvisami quando restano:', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: CupertinoColors.secondaryLabel)),
               const SizedBox(height: 12),
               _buildDoseSelector(),
               const SizedBox(height: 40),
               _buildExpiryDateSelector(),
               const SizedBox(height: 50),
               CupertinoButton.filled(
-                onPressed: _navigateToNextStep,
-                child: const Text('Avanti'),
+                onPressed: _onConfirm,
+                child: Text(widget.initialData.isSingleEditMode ? 'Conferma' : 'Avanti'),
               ),
               const SizedBox(height: 20),
             ],
@@ -153,10 +136,7 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
             color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Text(
-            _remainingDosesThreshold.toString(),
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
+          child: Text(_remainingDosesThreshold.toString(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         ),
         CupertinoButton(
           onPressed: () => setState(() => _remainingDosesThreshold++),
@@ -192,10 +172,7 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'Riceverai un avviso 7 giorni prima della scadenza',
-          style: TextStyle(fontSize: 14, color: CupertinoColors.secondaryLabel),
-        ),
+        const Text('Riceverai un avviso 7 giorni prima della scadenza', style: TextStyle(fontSize: 14, color: CupertinoColors.secondaryLabel)),
       ],
     );
   }

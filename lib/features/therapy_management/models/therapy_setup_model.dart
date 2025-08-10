@@ -1,9 +1,9 @@
+// lib/features/therapy_management/models/therapy_setup_model.dart
 import 'package:akora_app/data/models/drug_model.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 import 'package:flutter/material.dart' show TimeOfDay;
 
-// A simple class to hold all the data during the setup/edit flow.
 class TherapySetupData {
   Drug currentDrug;
   TakingFrequency selectedFrequency;
@@ -14,9 +14,8 @@ class TherapySetupData {
   int doseThreshold;
   int? initialDoses;
   DateTime? expiryDate;
-  // This will be non-null only in edit mode, used to identify the record to update.
   Therapy? initialTherapy;
-  bool isEditing;
+  bool isSingleEditMode; 
 
   TherapySetupData({
     required this.currentDrug,
@@ -29,7 +28,7 @@ class TherapySetupData {
     this.initialDoses,
     this.expiryDate,
     this.initialTherapy,
-    this.isEditing = false,
+    this.isSingleEditMode = false,
   });
 
   // A factory constructor to create an instance from an existing Therapy object
@@ -53,7 +52,7 @@ class TherapySetupData {
       initialDoses: therapy.dosesRemaining,
       expiryDate: therapy.expiryDate,
       initialTherapy: therapy,
-      isEditing: true,
+      isSingleEditMode: false,
     );
   }
 }

@@ -2,7 +2,7 @@ import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:akora_app/core/services/notification_service.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
-import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart'; // Import the new data model
+import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart';
 import 'package:akora_app/main.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/cupertino.dart';
@@ -11,10 +11,18 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class TherapySummaryScreen extends StatefulWidget {
-  // The constructor now takes the single data model object.
-  final TherapySetupData initialData;
+  // This screen can be entered in two ways:
+  // 1. From the setup flow, with 'setupData'.
+  // 2. From the detail screen for editing, with 'initialTherapy'.
+  final TherapySetupData? setupData;
+  final Therapy? initialTherapy;
 
-  const TherapySummaryScreen({super.key, required this.initialData});
+  const TherapySummaryScreen({
+    super.key,
+    this.setupData,
+    this.initialTherapy,
+  }) : assert(setupData != null || initialTherapy != null,
+            'Either setupData or initialTherapy must be provided');
 
   @override
   State<TherapySummaryScreen> createState() => _TherapySummaryScreenState();
@@ -27,10 +35,13 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
   @override
   void initState() {
     super.initState();
-    currentData = widget.initialData;
+    // Initialize the state from whichever source was provided.
+    // If we're editing, we create the setup model from the existing therapy.
+    currentData = widget.setupData ?? TherapySetupData.fromTherapy(widget.initialTherapy!);
   }
 
   String _formatFrequency(BuildContext context) {
+    // Reads from the 'currentData' state variable
     switch (currentData.selectedFrequency) {
       case TakingFrequency.onceDaily:
         return 'Ogni giorno alle ${currentData.selectedTime.format(context)}';
@@ -45,60 +56,25 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
 
   // --- NAVIGATION METHODS FOR EDIT BUTTONS ---
 
-  // Navigates to the Frequency/Time screens and waits for the updated data.
-  Future<void> _editFrequencyAndTime() async {
-    currentData.isEditing = true; // Set the editing state to true
+  // A generic helper for launching an edit screen and updating the local state with the result.
+  Future<void> _launchEditScreen(String routeName) async {
+    currentData.isSingleEditMode = true;
 
     final result = await context.pushNamed(
-      AppRouter.therapyFrequencyRouteName,
-      extra: currentData, // Pass the current data to the start of the sub-flow
+      routeName,
+      extra: currentData, // Pass the current, up-to-date data model
     );
 
+    // When the edit screen 'pops' with data, this will be the result.
     if (result is TherapySetupData && mounted) {
-      result.isEditing = false; // Reset the editing state
+      result.isSingleEditMode = false;
       setState(() {
-        currentData = result; // Update the UI with the returned, modified data
+        currentData = result; // Update the UI to reflect the changes
       });
     }
   }
-
-  // Navigates to the Duration screen and waits for the updated data.
-  Future<void> _editDuration() async {
-    currentData.isEditing = true;
-
-    final result = await context.pushNamed(
-      AppRouter.therapyDurationRouteName,
-      extra: currentData,
-    );
-
-    if (result is TherapySetupData && mounted) {
-      result.isEditing = false; // Reset the editing state
-      setState(() {
-        currentData = result;
-      });
-    }
-  }
-
-  // Navigates to the Dose/Expiry screen and waits for the updated data.
-  Future<void> _editDoseAndExpiry() async {
-    currentData.isEditing = true; // Set the editing state to true
-
-    final result = await context.pushNamed(
-      AppRouter.doseAndExpiryRouteName,
-      extra: currentData,
-    );
-
-    if (result is TherapySetupData && mounted) {
-      result.isEditing = false; // Reset the editing state
-      setState(() {
-        currentData = result;
-      });
-    }
-  }
-
 
   Future<void> _saveAndConfirm(BuildContext context) async {
-    // The save logic now uses the 'currentData' state variable.
     try {
       if (currentData.initialTherapy != null) {
         // --- UPDATE LOGIC ---
@@ -118,7 +94,8 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
         );
         await db.updateTherapy(updatedTherapy);
         await NotificationService().scheduleNotificationForTherapy(updatedTherapy);
-        print('--- THERAPY SUCCESSFULLY UPDATED AND NOTIFICATIONS RESCHEDULED ---');
+        await NotificationService().scheduleExpiryNotification(updatedTherapy);
+        print('--- THERAPY UPDATED AND NOTIFICATIONS RESCHEDULED ---');
 
       } else {
         // --- CREATE LOGIC ---
@@ -138,8 +115,9 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
         );
         final newTherapyId = await db.createTherapy(therapyToInsert);
         final newTherapy = await db.getTherapyById(newTherapyId);
-        print('--- THERAPY SUCCESSFULLY SAVED WITH ID: $newTherapyId ---');
+        print('--- THERAPY SAVED, SCHEDULING NOTIFICATIONS ---');
         await NotificationService().scheduleNotificationForTherapy(newTherapy);
+        await NotificationService().scheduleExpiryNotification(newTherapy);
       }
 
       if (context.mounted) {
@@ -148,7 +126,6 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
     } catch (e, s) {
       print('--- FAILED TO SAVE/UPDATE THERAPY: $e ---');
       print(s);
-      // ... (Error dialog)
     }
   }
 
@@ -161,7 +138,7 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
       backgroundColor: pageBackgroundColor,
       navigationBar: CupertinoNavigationBar(
         middle: const Text('Riepilogo Terapia'),
-        previousPageTitle: 'Promemoria', // This will need to be dynamic
+        previousPageTitle: 'Indietro', // Generic 'Back' title is safer
         backgroundColor: pageBackgroundColor,
         brightness: Brightness.dark,
       ),
@@ -174,10 +151,7 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
               const Text(
                 'Controlla le impostazioni prima di confermare',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: CupertinoColors.lightBackgroundGray,
-                ),
+                style: TextStyle(fontSize: 16, color: CupertinoColors.lightBackgroundGray),
               ),
               const SizedBox(height: 30),
               Expanded(
@@ -187,30 +161,30 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
                       icon: FontAwesomeIcons.pills,
                       text: currentData.currentDrug.fullDescription,
                       onEdit: () {
-                        // Drug selection cannot be edited, so this button can be disabled or do nothing.
+                        // Drug cannot be changed once selected in the flow
                         print('Edit Drug tapped - (Action Disabled)');
                       },
                     ),
                     _buildSummaryRow(
                       icon: CupertinoIcons.time,
                       text: _formatFrequency(context),
-                      onEdit: _editFrequencyAndTime, // Assign the edit method
+                      onEdit: () => _launchEditScreen(AppRouter.therapyFrequencyRouteName),
                     ),
                     _buildSummaryRow(
                       icon: CupertinoIcons.calendar,
                       text: 'Dal ${DateFormat('dd/MM/yyyy').format(currentData.startDate)} al ${DateFormat('dd/MM/yyyy').format(currentData.endDate)}',
-                      onEdit: _editDuration, // Assign the edit method
+                      onEdit: () => _launchEditScreen(AppRouter.therapyDurationRouteName),
                     ),
                     _buildSummaryRow(
                       icon: FontAwesomeIcons.prescriptionBottle,
                       text: 'Avviso a ${currentData.doseThreshold} dosi rimanenti',
-                      onEdit: _editDoseAndExpiry, // Assign the edit method
+                      onEdit: () => _launchEditScreen(AppRouter.doseAndExpiryRouteName),
                     ),
                     if (currentData.expiryDate != null)
                       _buildSummaryRow(
                         icon: CupertinoIcons.exclamationmark_triangle,
                         text: 'Notifica per scadenza 7 giorni prima',
-                        onEdit: _editDoseAndExpiry, // Also goes to the same screen
+                        onEdit: () => _launchEditScreen(AppRouter.doseAndExpiryRouteName),
                       ),
                   ],
                 ),
@@ -221,10 +195,7 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
                 onPressed: () => _saveAndConfirm(context),
                 child: Text(
                   'SALVA E CONFERMA',
-                  style: TextStyle(
-                    color: theme.primaryColor,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold),
                 ),
               ),
             ],

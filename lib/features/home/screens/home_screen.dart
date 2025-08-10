@@ -39,7 +39,11 @@ class _HomeScreenState extends State<HomeScreen> {
             isDestructiveAction: true,
             child: const Text('Elimina'),
             onPressed: () async {
+              // 1. Cancel daily reminders
               await NotificationService().cancelTherapyNotifications(therapyToDelete);
+              // 2. Cancel the expiry notification
+              await NotificationService().cancelExpiryNotification(therapyToDelete.id);
+              // 3. Delete the therapy from the database
               await db.deleteTherapy(therapyToDelete.id);
               if (mounted) Navigator.pop(ctx);
             },
@@ -109,20 +113,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           motion: const BehindMotion(),
                           children: [
                             SlidableAction(
-                              onPressed: (buildContext) =>
-                                  _deleteTherapy(therapy),
-                              backgroundColor: CupertinoColors.destructiveRed,
-                              foregroundColor: CupertinoColors.white,
-                              icon: CupertinoIcons.delete,
-                              label: 'Elimina',
-                            ),
-                            SlidableAction(
-                              onPressed: (buildContext) =>
-                                  _editTherapy(therapy),
+                              onPressed: (buildContext) => _editTherapy(therapy),
                               backgroundColor: CupertinoColors.systemBlue,
                               foregroundColor: CupertinoColors.white,
                               icon: CupertinoIcons.pencil,
                               label: 'Modifica',
+                            ),
+                            SlidableAction(
+                              onPressed: (buildContext) => _deleteTherapy(therapy),
+                              backgroundColor: CupertinoColors.destructiveRed,
+                              foregroundColor: CupertinoColors.white,
+                              icon: CupertinoIcons.delete,
+                              label: 'Elimina',
                             ),
                           ],
                         ),

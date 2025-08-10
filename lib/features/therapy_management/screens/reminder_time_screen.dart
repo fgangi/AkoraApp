@@ -1,7 +1,7 @@
 import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:go_router/go_router.dart';
 
 class ReminderTimeScreen extends StatefulWidget {
@@ -23,16 +23,19 @@ class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
     _repeatAfter10Min = widget.initialData.repeatAfter10Min;
   }
 
-  void _navigateToNextStep() {
-    widget.initialData.selectedTime = TimeOfDay.fromDateTime(_selectedDateTime);
-    widget.initialData.repeatAfter10Min = _repeatAfter10Min;
+  void _onConfirm() {
+    final updatedData = widget.initialData
+      ..selectedTime = TimeOfDay.fromDateTime(_selectedDateTime)
+      ..repeatAfter10Min = _repeatAfter10Min;
 
-    if (widget.initialData.isEditing) {
-      context.pop(widget.initialData);
-      return;
+    if (widget.initialData.isSingleEditMode) {
+      context.pop(updatedData);
+    } else {
+      context.pushNamed(
+        AppRouter.therapyDurationRouteName,
+        extra: updatedData,
+      );
     }
-    
-    context.pushNamed(AppRouter.therapyDurationRouteName, extra: widget.initialData);
   }
 
   @override
@@ -40,8 +43,7 @@ class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(widget.initialData.currentDrug.name),
-        // Determine the back button title based on the mode.
-        previousPageTitle: widget.initialData.initialTherapy != null ? 'Dettagli' : 'Frequenza',
+        previousPageTitle: widget.initialData.isSingleEditMode ? 'Riepilogo' : 'Frequenza',
       ),
       child: SafeArea(
         child: Padding(
@@ -63,9 +65,7 @@ class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
                   initialDateTime: _selectedDateTime,
                   use24hFormat: true,
                   onDateTimeChanged: (DateTime newDateTime) {
-                    setState(() {
-                      _selectedDateTime = newDateTime;
-                    });
+                    setState(() { _selectedDateTime = newDateTime; });
                   },
                 ),
               ),
@@ -86,8 +86,8 @@ class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
               ),
               const Spacer(),
               CupertinoButton.filled(
-                onPressed: _navigateToNextStep,
-                child: const Text('Avanti'),
+                onPressed: _onConfirm,
+                child: Text(widget.initialData.isSingleEditMode ? 'Conferma' : 'Avanti'),
               ),
               const SizedBox(height: 20),
             ],
@@ -103,16 +103,8 @@ class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 16),
-            ),
-          ),
-          CupertinoSwitch(
-            value: value,
-            onChanged: onChanged,
-          ),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 16))),
+          CupertinoSwitch(value: value, onChanged: onChanged),
         ],
       ),
     );

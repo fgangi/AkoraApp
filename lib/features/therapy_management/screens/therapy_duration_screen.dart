@@ -22,16 +22,19 @@ class _TherapyDurationScreenState extends State<TherapyDurationScreen> {
     _endDate = widget.initialData.endDate;
   }
 
-  void _navigateToNextStep() {
-    widget.initialData.startDate = _startDate;
-    widget.initialData.endDate = _endDate;
+  void _onConfirm() {
+    final updatedData = widget.initialData
+      ..startDate = _startDate
+      ..endDate = _endDate;
 
-    if (widget.initialData.isEditing) {
-      context.pop(widget.initialData);
-      return;
+    if (widget.initialData.isSingleEditMode) {
+      context.pop(updatedData);
+    } else {
+      context.pushNamed(
+        AppRouter.doseAndExpiryRouteName,
+        extra: updatedData,
+      );
     }
-
-    context.pushNamed(AppRouter.doseAndExpiryRouteName, extra: widget.initialData);
   }
 
   void _showDatePicker(BuildContext context, {required bool isStartDate}) {
@@ -42,7 +45,7 @@ class _TherapyDurationScreenState extends State<TherapyDurationScreen> {
         color: CupertinoColors.systemBackground.resolveFrom(context),
         child: CupertinoDatePicker(
           initialDateTime: isStartDate ? _startDate : _endDate,
-          minimumDate: isStartDate ? null : _startDate.add(const Duration(days: 1)),
+          minimumDate: isStartDate ? null : _startDate,
           mode: CupertinoDatePickerMode.date,
           onDateTimeChanged: (newDate) {
             setState(() {
@@ -66,8 +69,7 @@ class _TherapyDurationScreenState extends State<TherapyDurationScreen> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(widget.initialData.currentDrug.name),
-        previousPageTitle:
-            widget.initialData.initialTherapy != null ? 'Dettagli' : 'Orario',
+        previousPageTitle: widget.initialData.isSingleEditMode ? 'Riepilogo' : 'Orario',
       ),
       child: SafeArea(
         child: Padding(
@@ -79,35 +81,20 @@ class _TherapyDurationScreenState extends State<TherapyDurationScreen> {
               const Text(
                 'IMPOSTA LA DURATA DELLA TUA TERAPIA',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 40),
-              const Text('INIZIO TERAPIA',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: CupertinoColors.secondaryLabel)),
+              const Text('INIZIO TERAPIA', style: TextStyle(fontWeight: FontWeight.w600, color: CupertinoColors.secondaryLabel)),
               const SizedBox(height: 8),
-              _buildDateRow(
-                date: _startDate,
-                onTap: () => _showDatePicker(context, isStartDate: true),
-              ),
+              _buildDateRow(date: _startDate, onTap: () => _showDatePicker(context, isStartDate: true)),
               const SizedBox(height: 30),
-              const Text('FINE TERAPIA',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: CupertinoColors.secondaryLabel)),
+              const Text('FINE TERAPIA', style: TextStyle(fontWeight: FontWeight.w600, color: CupertinoColors.secondaryLabel)),
               const SizedBox(height: 8),
-              _buildDateRow(
-                date: _endDate,
-                onTap: () => _showDatePicker(context, isStartDate: false),
-              ),
+              _buildDateRow(date: _endDate, onTap: () => _showDatePicker(context, isStartDate: false)),
               const Spacer(),
               CupertinoButton.filled(
-                onPressed: _navigateToNextStep,
-                child: const Text('Avanti'),
+                onPressed: _onConfirm,
+                child: Text(widget.initialData.isSingleEditMode ? 'Conferma' : 'Avanti'),
               ),
               const SizedBox(height: 20),
             ],
@@ -124,20 +111,13 @@ class _TherapyDurationScreenState extends State<TherapyDurationScreen> {
       onPressed: onTap,
       child: Text(
         '${date.day} ${getMonthName(date.month)} ${date.year}',
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: CupertinoColors.label,
-        ),
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: CupertinoColors.label.resolveFrom(context)),
       ),
     );
   }
 
   String getMonthName(int month) {
-    const months = [
-      'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
-      'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
-    ];
+    const months = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
     return months[month - 1];
   }
 }

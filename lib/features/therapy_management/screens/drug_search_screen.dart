@@ -39,9 +39,11 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
     });
   }
 
-  void _onDrugSelected(Drug selectedDrug) {
+    void _onDrugSelected(Drug selectedDrug) {
+    // This method is only called when creating a brand new therapy.
     final setupData = TherapySetupData(
       currentDrug: selectedDrug,
+      // Default values for a new therapy
       selectedFrequency: TakingFrequency.onceDaily,
       selectedTime: const TimeOfDay(hour: 8, minute: 30),
       repeatAfter10Min: false,
@@ -50,9 +52,17 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
       doseThreshold: 10,
       initialDoses: 20,
       expiryDate: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
+      // In create mode, there is no initial therapy.
       initialTherapy: null,
+      // When creating a new therapy, it is NOT a single edit.
+      isSingleEditMode: false,
     );
-    context.pushNamed(AppRouter.therapyFrequencyRouteName, extra: setupData);
+
+    // Pass the complete and correctly configured data model to the first setup screen.
+    context.pushNamed(
+      AppRouter.therapyFrequencyRouteName,
+      extra: setupData,
+    );
   }
 
   void _performSearch() {

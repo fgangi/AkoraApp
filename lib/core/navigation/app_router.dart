@@ -14,11 +14,11 @@ import 'package:akora_app/features/therapy_management/screens/therapy_summary_sc
 import 'package:akora_app/features/therapy_management/screens/therapy_detail_screen.dart';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart'; // Required for TimeOfDay
+import 'package:flutter/material.dart' show TimeOfDay; // Required for TimeOfDay
 import 'package:go_router/go_router.dart';
 
 class AppRouter {
-  // Define all route names as constants
+  // --- Route names (no changes) ---
   static const String homeRouteName = 'home';
   static const String addTherapyStartRouteName = 'addTherapyStart';
   static const String therapyFrequencyRouteName = 'therapyFrequency';
@@ -52,7 +52,7 @@ class AppRouter {
         path: '/${therapyFrequencyRouteName}',
         name: therapyFrequencyRouteName,
         builder: (BuildContext context, GoRouterState state) {
-          // This route now receives the fully-formed TherapySetupData object
+          // It ALWAYS expects TherapySetupData now. The cast error will be gone.
           final TherapySetupData data = state.extra as TherapySetupData;
           return TherapyFrequencyScreen(initialData: data);
         },
@@ -86,7 +86,7 @@ class AppRouter {
         name: therapySummaryRouteName,
         builder: (BuildContext context, GoRouterState state) {
           final TherapySetupData data = state.extra as TherapySetupData;
-          return TherapySummaryScreen(initialData: data);
+          return TherapySummaryScreen(setupData: data);
         },
       ),
 

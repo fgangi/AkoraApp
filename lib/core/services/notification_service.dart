@@ -6,7 +6,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_native_timezone/flutter_native_timezone.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 @pragma('vm:entry-point')
 void onDidReceiveBackgroundNotificationResponse(NotificationResponse notificationResponse) {
@@ -28,7 +28,7 @@ class NotificationService {
     tz.initializeTimeZones();
     try {
       // Get the timezone from the native side of the device
-      final String timeZoneName = await FlutterNativeTimezone.getLocalTimezone();
+      final String timeZoneName = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(timeZoneName));
       debugPrint("Timezone successfully initialized to: $timeZoneName");
     } catch (e) {
@@ -164,6 +164,87 @@ class NotificationService {
       payload: 'low_stock_$therapyId', // Optional payload for navigation
     );
     debugPrint('Scheduled low stock notification for therapy ID: $therapyId');
+  }
+
+  Future<void> scheduleExpiryNotification(Therapy therapy) async {
+    final int expiryId = 200000 + therapy.id; // Predictable ID
+    await _plugin.cancel(expiryId); // Always cancel the old one first
+
+    if (therapy.expiryDate == null) {
+      return; // No date set, nothing to do.
+    }
+
+    final now = tz.TZDateTime.now(tz.local);
+    final expiryDate = tz.TZDateTime.from(therapy.expiryDate!, tz.local);
+    
+    // Calculate the difference in days between now and the expiry date
+    final differenceInDays = expiryDate.difference(now).inDays;
+
+    tz.TZDateTime? scheduledDate; // Make the scheduledDate nullable
+
+    if (differenceInDays >= 7) {
+      // --- Case 1: More than 7 days away ---
+      // Schedule it for exactly 7 days before expiry.
+      final notificationDate = therapy.expiryDate!.subtract(const Duration(days: 7));
+      scheduledDate = tz.TZDateTime(
+        tz.local,
+        notificationDate.year,
+        notificationDate.month,
+        notificationDate.day,
+        therapy.reminderHour, // Schedule for the same time as the daily reminder
+        therapy.reminderMinute,
+      );
+      debugPrint('Expiry > 7 days away. Scheduling for $scheduledDate');
+
+    } else if (differenceInDays >= 0) {
+      // --- Case 2: Between 0 and 6 days away ---
+      // The drug is expiring soon! Schedule an immediate notification.
+      // We schedule it for 5 seconds in the future to ensure it fires.
+      scheduledDate = now.add(const Duration(seconds: 5));
+      debugPrint('Expiry < 7 days away. Scheduling for NOW.');
+
+    } else {
+      // --- Case 3: Expired ---
+      // The expiry date is in the past. Do nothing.
+      debugPrint('Expiry date is in the past. No notification scheduled.');
+      return;
+    }
+
+    // If we have a valid scheduled date, proceed with scheduling
+    if (scheduledDate != null) {
+      final String title = 'Farmaco in Scadenza: ${therapy.drugName}';
+      final String body =
+          'La tua confezione di ${therapy.drugName} scadrà il ${DateFormat('dd/MM/yyyy').format(therapy.expiryDate!)}.';
+
+      await _plugin.zonedSchedule(
+        expiryId,
+        title,
+        body,
+        scheduledDate,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'expiry_alerts_channel_id',
+            'Avvisi di Scadenza',
+            channelDescription: 'Notifiche per farmaci in scadenza.',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+      debugPrint('Final Expiry Notification scheduled with ID $expiryId for $scheduledDate');
+    }
+  }
+
+  Future<void> cancelExpiryNotification(int therapyId) async {
+    final int expiryId = 200000 + therapyId;
+    await _plugin.cancel(expiryId);
+    debugPrint('Cancelled expiry notification with ID: $expiryId');
   }
 
   /// Cancels a single scheduled notification for a specific therapy on a specific day.
