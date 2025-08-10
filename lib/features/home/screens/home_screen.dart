@@ -15,6 +15,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // The stream now points back to the simple query for ALL active therapies.
   late Stream<List<Therapy>> _therapiesStream;
 
   @override
@@ -39,11 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
             isDestructiveAction: true,
             child: const Text('Elimina'),
             onPressed: () async {
-              // 1. Cancel daily reminders
               await NotificationService().cancelTherapyNotifications(therapyToDelete);
-              // 2. Cancel the expiry notification
-              await NotificationService().cancelExpiryNotification(therapyToDelete.id);
-              // 3. Delete the therapy from the database
               await db.deleteTherapy(therapyToDelete.id);
               if (mounted) Navigator.pop(ctx);
             },
@@ -63,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
+      // The navigation bar is now simple again, without the calendar button.
       navigationBar: CupertinoNavigationBar(
         middle: const Text('Le Mie Terapie'),
         trailing: CupertinoButton(
@@ -73,18 +71,21 @@ class _HomeScreenState extends State<HomeScreen> {
           child: const Icon(CupertinoIcons.add),
         ),
       ),
+      // The body is just the StreamBuilder directly inside the SafeArea.
       child: SafeArea(
         child: StreamBuilder<List<Therapy>>(
           stream: _therapiesStream,
           builder: (context, snapshot) {
-            // ... (The rest of the StreamBuilder is exactly the same as before)
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CupertinoActivityIndicator());
             }
+
             if (snapshot.hasError) {
               return Center(child: Text('Errore: ${snapshot.error}'));
             }
+
             final therapies = snapshot.data ?? [];
+
             if (therapies.isEmpty) {
               return const Center(
                 child: Padding(
@@ -98,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               );
             } else {
+              // The ListView.builder now shows all therapies returned from the stream.
               return ListView.builder(
                 padding: const EdgeInsets.all(16.0),
                 itemCount: therapies.length,
@@ -113,14 +115,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           motion: const BehindMotion(),
                           children: [
                             SlidableAction(
-                              onPressed: (buildContext) => _editTherapy(therapy),
+                              onPressed: (buildContext) =>
+                                  _editTherapy(therapy),
                               backgroundColor: CupertinoColors.systemBlue,
                               foregroundColor: CupertinoColors.white,
                               icon: CupertinoIcons.pencil,
                               label: 'Modifica',
                             ),
                             SlidableAction(
-                              onPressed: (buildContext) => _deleteTherapy(therapy),
+                              onPressed: (buildContext) =>
+                                  _deleteTherapy(therapy),
                               backgroundColor: CupertinoColors.destructiveRed,
                               foregroundColor: CupertinoColors.white,
                               icon: CupertinoIcons.delete,

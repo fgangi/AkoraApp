@@ -85,8 +85,13 @@ class AppRouter {
         path: '/${therapySummaryRouteName}',
         name: therapySummaryRouteName,
         builder: (BuildContext context, GoRouterState state) {
-          final TherapySetupData data = state.extra as TherapySetupData;
-          return TherapySummaryScreen(setupData: data);
+          // In the "Create" flow, it receives TherapySetupData.
+          // In the "Edit from Detail" flow, it receives a Therapy object.
+          if (state.extra is TherapySetupData) {
+            return TherapySummaryScreen(setupData: state.extra as TherapySetupData);
+          } else {
+            return TherapySummaryScreen(initialTherapy: state.extra as Therapy);
+          }
         },
       ),
 

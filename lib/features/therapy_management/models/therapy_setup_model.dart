@@ -2,12 +2,16 @@
 import 'package:akora_app/data/models/drug_model.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
+// TimeOfDay is no longer needed here, but we'll leave the import for now
+// as other screens might still be using it temporarily during the refactor.
 import 'package:flutter/material.dart' show TimeOfDay;
 
 class TherapySetupData {
   Drug currentDrug;
   TakingFrequency selectedFrequency;
-  TimeOfDay selectedTime;
+  
+  List<String> reminderTimes; // e.g., ["08:30", "20:00"]
+  
   bool repeatAfter10Min;
   DateTime startDate;
   DateTime endDate;
@@ -15,12 +19,14 @@ class TherapySetupData {
   int? initialDoses;
   DateTime? expiryDate;
   Therapy? initialTherapy;
-  bool isSingleEditMode; 
+  bool isSingleEditMode;
+  String doseAmount;
+  String doseUnit;
 
   TherapySetupData({
     required this.currentDrug,
     required this.selectedFrequency,
-    required this.selectedTime,
+    required this.reminderTimes,
     required this.repeatAfter10Min,
     required this.startDate,
     required this.endDate,
@@ -28,6 +34,8 @@ class TherapySetupData {
     this.initialDoses,
     this.expiryDate,
     this.initialTherapy,
+    required this.doseAmount,
+    required this.doseUnit,
     this.isSingleEditMode = false,
   });
 
@@ -38,13 +46,12 @@ class TherapySetupData {
         id: 'therapy_${therapy.id}',
         name: therapy.drugName,
         dosage: therapy.drugDosage,
-        // Placeholders for fields not in the Therapy object
         activeIngredient: '',
         quantityDescription: '',
         form: DrugForm.other,
       ),
       selectedFrequency: therapy.takingFrequency,
-      selectedTime: TimeOfDay(hour: therapy.reminderHour, minute: therapy.reminderMinute),
+      reminderTimes: therapy.reminderTimes,
       repeatAfter10Min: therapy.repeatAfter10Min,
       startDate: therapy.startDate,
       endDate: therapy.endDate,
@@ -53,6 +60,8 @@ class TherapySetupData {
       expiryDate: therapy.expiryDate,
       initialTherapy: therapy,
       isSingleEditMode: false,
+      doseAmount: therapy.doseAmount,
+      doseUnit: therapy.doseUnit,
     );
   }
 }

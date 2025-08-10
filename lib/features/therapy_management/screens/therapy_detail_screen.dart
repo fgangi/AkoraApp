@@ -12,22 +12,36 @@ class TherapyDetailScreen extends StatelessWidget {
 
   const TherapyDetailScreen({super.key, required this.therapy});
 
-  String _formatFrequency(BuildContext context) {
-    final time = TimeOfDay(hour: therapy.reminderHour, minute: therapy.reminderMinute);
-    // Use a try-catch for enums that might have been added/removed in development
-    try {
-      switch (therapy.takingFrequency) {
-        case TakingFrequency.onceDaily:
-          return 'Ogni giorno alle ${time.format(context)}';
-        case TakingFrequency.twiceDaily:
-          return 'Due volte al giorno';
-        case TakingFrequency.onceWeekly:
-          return 'Una volta a settimana';
-        case TakingFrequency.other:
-          return 'Frequenza personalizzata';
-      }
-    } catch (e) {
-      return 'Frequenza non definita';
+    String _formatFrequency(BuildContext context) {
+    // Safety check: if for some reason the reminder times are empty, show a fallback message.
+    if (therapy.reminderTimes.isEmpty) {
+      return 'Nessun orario impostato';
+    }
+
+    // Join all the saved time strings with a comma and space for readability.
+    // e.g., ["08:30", "20:00"] becomes "08:30, 20:00"
+    final String timesString = therapy.reminderTimes.join(', ');
+
+    // Use a switch statement on the frequency to return the appropriate descriptive text.
+    switch (therapy.takingFrequency) {
+      case TakingFrequency.onceDaily:
+        return 'Ogni giorno alle $timesString';
+        
+      case TakingFrequency.twiceDaily:
+        return 'Due volte al giorno ($timesString)';
+        
+      case TakingFrequency.onceWeekly:
+        // --- THIS IS THE CORRECTED LINE ---
+        // Changed TakingFreedom to TakingFrequency
+        return 'Una volta a settimana alle $timesString';
+        
+      case TakingFrequency.other:
+        return 'Frequenza personalizzata';
+        
+      // It's good practice to have a default case, although it shouldn't be reached
+      // if all enum values are handled.
+      default:
+        return 'Frequenza non specificata';
     }
   }
 

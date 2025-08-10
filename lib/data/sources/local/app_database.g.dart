@@ -44,6 +44,30 @@ class $TherapiesTable extends Therapies
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _doseAmountMeta = const VerificationMeta(
+    'doseAmount',
+  );
+  @override
+  late final GeneratedColumn<String> doseAmount = GeneratedColumn<String>(
+    'dose_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('1'),
+  );
+  static const VerificationMeta _doseUnitMeta = const VerificationMeta(
+    'doseUnit',
+  );
+  @override
+  late final GeneratedColumn<String> doseUnit = GeneratedColumn<String>(
+    'dose_unit',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('compressa'),
+  );
   @override
   late final GeneratedColumnWithTypeConverter<TakingFrequency, String>
   takingFrequency = GeneratedColumn<String>(
@@ -53,28 +77,15 @@ class $TherapiesTable extends Therapies
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   ).withConverter<TakingFrequency>($TherapiesTable.$convertertakingFrequency);
-  static const VerificationMeta _reminderHourMeta = const VerificationMeta(
-    'reminderHour',
-  );
   @override
-  late final GeneratedColumn<int> reminderHour = GeneratedColumn<int>(
-    'reminder_hour',
+  late final GeneratedColumnWithTypeConverter<List<String>, String>
+  reminderTimes = GeneratedColumn<String>(
+    'reminder_times',
     aliasedName,
     false,
-    type: DriftSqlType.int,
+    type: DriftSqlType.string,
     requiredDuringInsert: true,
-  );
-  static const VerificationMeta _reminderMinuteMeta = const VerificationMeta(
-    'reminderMinute',
-  );
-  @override
-  late final GeneratedColumn<int> reminderMinute = GeneratedColumn<int>(
-    'reminder_minute',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
+  ).withConverter<List<String>>($TherapiesTable.$converterreminderTimes);
   static const VerificationMeta _repeatAfter10MinMeta = const VerificationMeta(
     'repeatAfter10Min',
   );
@@ -133,6 +144,17 @@ class $TherapiesTable extends Therapies
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _dosesRemainingMeta = const VerificationMeta(
+    'dosesRemaining',
+  );
+  @override
+  late final GeneratedColumn<int> dosesRemaining = GeneratedColumn<int>(
+    'doses_remaining',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -163,33 +185,23 @@ class $TherapiesTable extends Therapies
     ),
     defaultValue: const Constant(false),
   );
-  static const VerificationMeta _dosesRemainingMeta = const VerificationMeta(
-    'dosesRemaining',
-  );
-  @override
-  late final GeneratedColumn<int> dosesRemaining = GeneratedColumn<int>(
-    'doses_remaining',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
     drugName,
     drugDosage,
+    doseAmount,
+    doseUnit,
     takingFrequency,
-    reminderHour,
-    reminderMinute,
+    reminderTimes,
     repeatAfter10Min,
     startDate,
     endDate,
     doseThreshold,
     expiryDate,
+    dosesRemaining,
     isActive,
     isPaused,
-    dosesRemaining,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -222,27 +234,17 @@ class $TherapiesTable extends Therapies
     } else if (isInserting) {
       context.missing(_drugDosageMeta);
     }
-    if (data.containsKey('reminder_hour')) {
+    if (data.containsKey('dose_amount')) {
       context.handle(
-        _reminderHourMeta,
-        reminderHour.isAcceptableOrUnknown(
-          data['reminder_hour']!,
-          _reminderHourMeta,
-        ),
+        _doseAmountMeta,
+        doseAmount.isAcceptableOrUnknown(data['dose_amount']!, _doseAmountMeta),
       );
-    } else if (isInserting) {
-      context.missing(_reminderHourMeta);
     }
-    if (data.containsKey('reminder_minute')) {
+    if (data.containsKey('dose_unit')) {
       context.handle(
-        _reminderMinuteMeta,
-        reminderMinute.isAcceptableOrUnknown(
-          data['reminder_minute']!,
-          _reminderMinuteMeta,
-        ),
+        _doseUnitMeta,
+        doseUnit.isAcceptableOrUnknown(data['dose_unit']!, _doseUnitMeta),
       );
-    } else if (isInserting) {
-      context.missing(_reminderMinuteMeta);
     }
     if (data.containsKey('repeat_after10_min')) {
       context.handle(
@@ -288,6 +290,15 @@ class $TherapiesTable extends Therapies
         expiryDate.isAcceptableOrUnknown(data['expiry_date']!, _expiryDateMeta),
       );
     }
+    if (data.containsKey('doses_remaining')) {
+      context.handle(
+        _dosesRemainingMeta,
+        dosesRemaining.isAcceptableOrUnknown(
+          data['doses_remaining']!,
+          _dosesRemainingMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_active')) {
       context.handle(
         _isActiveMeta,
@@ -298,15 +309,6 @@ class $TherapiesTable extends Therapies
       context.handle(
         _isPausedMeta,
         isPaused.isAcceptableOrUnknown(data['is_paused']!, _isPausedMeta),
-      );
-    }
-    if (data.containsKey('doses_remaining')) {
-      context.handle(
-        _dosesRemainingMeta,
-        dosesRemaining.isAcceptableOrUnknown(
-          data['doses_remaining']!,
-          _dosesRemainingMeta,
-        ),
       );
     }
     return context;
@@ -330,20 +332,26 @@ class $TherapiesTable extends Therapies
         DriftSqlType.string,
         data['${effectivePrefix}drug_dosage'],
       )!,
+      doseAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dose_amount'],
+      )!,
+      doseUnit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dose_unit'],
+      )!,
       takingFrequency: $TherapiesTable.$convertertakingFrequency.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
           data['${effectivePrefix}taking_frequency'],
         )!,
       ),
-      reminderHour: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}reminder_hour'],
-      )!,
-      reminderMinute: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}reminder_minute'],
-      )!,
+      reminderTimes: $TherapiesTable.$converterreminderTimes.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}reminder_times'],
+        )!,
+      ),
       repeatAfter10Min: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}repeat_after10_min'],
@@ -364,6 +372,10 @@ class $TherapiesTable extends Therapies
         DriftSqlType.dateTime,
         data['${effectivePrefix}expiry_date'],
       ),
+      dosesRemaining: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}doses_remaining'],
+      ),
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -372,10 +384,6 @@ class $TherapiesTable extends Therapies
         DriftSqlType.bool,
         data['${effectivePrefix}is_paused'],
       )!,
-      dosesRemaining: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}doses_remaining'],
-      ),
     );
   }
 
@@ -386,40 +394,42 @@ class $TherapiesTable extends Therapies
 
   static TypeConverter<TakingFrequency, String> $convertertakingFrequency =
       const TakingFrequencyConverter();
+  static TypeConverter<List<String>, String> $converterreminderTimes =
+      const ReminderTimesConverter();
 }
 
 class Therapy extends DataClass implements Insertable<Therapy> {
   final int id;
   final String drugName;
   final String drugDosage;
+  final String doseAmount;
+  final String doseUnit;
   final TakingFrequency takingFrequency;
-  final int reminderHour;
-  final int reminderMinute;
+  final List<String> reminderTimes;
   final bool repeatAfter10Min;
   final DateTime startDate;
   final DateTime endDate;
   final int doseThreshold;
   final DateTime? expiryDate;
+  final int? dosesRemaining;
   final bool isActive;
   final bool isPaused;
-
-  /// Tracking Supply
-  final int? dosesRemaining;
   const Therapy({
     required this.id,
     required this.drugName,
     required this.drugDosage,
+    required this.doseAmount,
+    required this.doseUnit,
     required this.takingFrequency,
-    required this.reminderHour,
-    required this.reminderMinute,
+    required this.reminderTimes,
     required this.repeatAfter10Min,
     required this.startDate,
     required this.endDate,
     required this.doseThreshold,
     this.expiryDate,
+    this.dosesRemaining,
     required this.isActive,
     required this.isPaused,
-    this.dosesRemaining,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -427,13 +437,18 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     map['id'] = Variable<int>(id);
     map['drug_name'] = Variable<String>(drugName);
     map['drug_dosage'] = Variable<String>(drugDosage);
+    map['dose_amount'] = Variable<String>(doseAmount);
+    map['dose_unit'] = Variable<String>(doseUnit);
     {
       map['taking_frequency'] = Variable<String>(
         $TherapiesTable.$convertertakingFrequency.toSql(takingFrequency),
       );
     }
-    map['reminder_hour'] = Variable<int>(reminderHour);
-    map['reminder_minute'] = Variable<int>(reminderMinute);
+    {
+      map['reminder_times'] = Variable<String>(
+        $TherapiesTable.$converterreminderTimes.toSql(reminderTimes),
+      );
+    }
     map['repeat_after10_min'] = Variable<bool>(repeatAfter10Min);
     map['start_date'] = Variable<DateTime>(startDate);
     map['end_date'] = Variable<DateTime>(endDate);
@@ -441,11 +456,11 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     if (!nullToAbsent || expiryDate != null) {
       map['expiry_date'] = Variable<DateTime>(expiryDate);
     }
-    map['is_active'] = Variable<bool>(isActive);
-    map['is_paused'] = Variable<bool>(isPaused);
     if (!nullToAbsent || dosesRemaining != null) {
       map['doses_remaining'] = Variable<int>(dosesRemaining);
     }
+    map['is_active'] = Variable<bool>(isActive);
+    map['is_paused'] = Variable<bool>(isPaused);
     return map;
   }
 
@@ -454,9 +469,10 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       id: Value(id),
       drugName: Value(drugName),
       drugDosage: Value(drugDosage),
+      doseAmount: Value(doseAmount),
+      doseUnit: Value(doseUnit),
       takingFrequency: Value(takingFrequency),
-      reminderHour: Value(reminderHour),
-      reminderMinute: Value(reminderMinute),
+      reminderTimes: Value(reminderTimes),
       repeatAfter10Min: Value(repeatAfter10Min),
       startDate: Value(startDate),
       endDate: Value(endDate),
@@ -464,11 +480,11 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       expiryDate: expiryDate == null && nullToAbsent
           ? const Value.absent()
           : Value(expiryDate),
-      isActive: Value(isActive),
-      isPaused: Value(isPaused),
       dosesRemaining: dosesRemaining == null && nullToAbsent
           ? const Value.absent()
           : Value(dosesRemaining),
+      isActive: Value(isActive),
+      isPaused: Value(isPaused),
     );
   }
 
@@ -481,19 +497,20 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       id: serializer.fromJson<int>(json['id']),
       drugName: serializer.fromJson<String>(json['drugName']),
       drugDosage: serializer.fromJson<String>(json['drugDosage']),
+      doseAmount: serializer.fromJson<String>(json['doseAmount']),
+      doseUnit: serializer.fromJson<String>(json['doseUnit']),
       takingFrequency: serializer.fromJson<TakingFrequency>(
         json['takingFrequency'],
       ),
-      reminderHour: serializer.fromJson<int>(json['reminderHour']),
-      reminderMinute: serializer.fromJson<int>(json['reminderMinute']),
+      reminderTimes: serializer.fromJson<List<String>>(json['reminderTimes']),
       repeatAfter10Min: serializer.fromJson<bool>(json['repeatAfter10Min']),
       startDate: serializer.fromJson<DateTime>(json['startDate']),
       endDate: serializer.fromJson<DateTime>(json['endDate']),
       doseThreshold: serializer.fromJson<int>(json['doseThreshold']),
       expiryDate: serializer.fromJson<DateTime?>(json['expiryDate']),
+      dosesRemaining: serializer.fromJson<int?>(json['dosesRemaining']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       isPaused: serializer.fromJson<bool>(json['isPaused']),
-      dosesRemaining: serializer.fromJson<int?>(json['dosesRemaining']),
     );
   }
   @override
@@ -503,17 +520,18 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       'id': serializer.toJson<int>(id),
       'drugName': serializer.toJson<String>(drugName),
       'drugDosage': serializer.toJson<String>(drugDosage),
+      'doseAmount': serializer.toJson<String>(doseAmount),
+      'doseUnit': serializer.toJson<String>(doseUnit),
       'takingFrequency': serializer.toJson<TakingFrequency>(takingFrequency),
-      'reminderHour': serializer.toJson<int>(reminderHour),
-      'reminderMinute': serializer.toJson<int>(reminderMinute),
+      'reminderTimes': serializer.toJson<List<String>>(reminderTimes),
       'repeatAfter10Min': serializer.toJson<bool>(repeatAfter10Min),
       'startDate': serializer.toJson<DateTime>(startDate),
       'endDate': serializer.toJson<DateTime>(endDate),
       'doseThreshold': serializer.toJson<int>(doseThreshold),
       'expiryDate': serializer.toJson<DateTime?>(expiryDate),
+      'dosesRemaining': serializer.toJson<int?>(dosesRemaining),
       'isActive': serializer.toJson<bool>(isActive),
       'isPaused': serializer.toJson<bool>(isPaused),
-      'dosesRemaining': serializer.toJson<int?>(dosesRemaining),
     };
   }
 
@@ -521,34 +539,36 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     int? id,
     String? drugName,
     String? drugDosage,
+    String? doseAmount,
+    String? doseUnit,
     TakingFrequency? takingFrequency,
-    int? reminderHour,
-    int? reminderMinute,
+    List<String>? reminderTimes,
     bool? repeatAfter10Min,
     DateTime? startDate,
     DateTime? endDate,
     int? doseThreshold,
     Value<DateTime?> expiryDate = const Value.absent(),
+    Value<int?> dosesRemaining = const Value.absent(),
     bool? isActive,
     bool? isPaused,
-    Value<int?> dosesRemaining = const Value.absent(),
   }) => Therapy(
     id: id ?? this.id,
     drugName: drugName ?? this.drugName,
     drugDosage: drugDosage ?? this.drugDosage,
+    doseAmount: doseAmount ?? this.doseAmount,
+    doseUnit: doseUnit ?? this.doseUnit,
     takingFrequency: takingFrequency ?? this.takingFrequency,
-    reminderHour: reminderHour ?? this.reminderHour,
-    reminderMinute: reminderMinute ?? this.reminderMinute,
+    reminderTimes: reminderTimes ?? this.reminderTimes,
     repeatAfter10Min: repeatAfter10Min ?? this.repeatAfter10Min,
     startDate: startDate ?? this.startDate,
     endDate: endDate ?? this.endDate,
     doseThreshold: doseThreshold ?? this.doseThreshold,
     expiryDate: expiryDate.present ? expiryDate.value : this.expiryDate,
-    isActive: isActive ?? this.isActive,
-    isPaused: isPaused ?? this.isPaused,
     dosesRemaining: dosesRemaining.present
         ? dosesRemaining.value
         : this.dosesRemaining,
+    isActive: isActive ?? this.isActive,
+    isPaused: isPaused ?? this.isPaused,
   );
   Therapy copyWithCompanion(TherapiesCompanion data) {
     return Therapy(
@@ -557,15 +577,16 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       drugDosage: data.drugDosage.present
           ? data.drugDosage.value
           : this.drugDosage,
+      doseAmount: data.doseAmount.present
+          ? data.doseAmount.value
+          : this.doseAmount,
+      doseUnit: data.doseUnit.present ? data.doseUnit.value : this.doseUnit,
       takingFrequency: data.takingFrequency.present
           ? data.takingFrequency.value
           : this.takingFrequency,
-      reminderHour: data.reminderHour.present
-          ? data.reminderHour.value
-          : this.reminderHour,
-      reminderMinute: data.reminderMinute.present
-          ? data.reminderMinute.value
-          : this.reminderMinute,
+      reminderTimes: data.reminderTimes.present
+          ? data.reminderTimes.value
+          : this.reminderTimes,
       repeatAfter10Min: data.repeatAfter10Min.present
           ? data.repeatAfter10Min.value
           : this.repeatAfter10Min,
@@ -577,11 +598,11 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       expiryDate: data.expiryDate.present
           ? data.expiryDate.value
           : this.expiryDate,
-      isActive: data.isActive.present ? data.isActive.value : this.isActive,
-      isPaused: data.isPaused.present ? data.isPaused.value : this.isPaused,
       dosesRemaining: data.dosesRemaining.present
           ? data.dosesRemaining.value
           : this.dosesRemaining,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
+      isPaused: data.isPaused.present ? data.isPaused.value : this.isPaused,
     );
   }
 
@@ -591,17 +612,18 @@ class Therapy extends DataClass implements Insertable<Therapy> {
           ..write('id: $id, ')
           ..write('drugName: $drugName, ')
           ..write('drugDosage: $drugDosage, ')
+          ..write('doseAmount: $doseAmount, ')
+          ..write('doseUnit: $doseUnit, ')
           ..write('takingFrequency: $takingFrequency, ')
-          ..write('reminderHour: $reminderHour, ')
-          ..write('reminderMinute: $reminderMinute, ')
+          ..write('reminderTimes: $reminderTimes, ')
           ..write('repeatAfter10Min: $repeatAfter10Min, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
           ..write('doseThreshold: $doseThreshold, ')
           ..write('expiryDate: $expiryDate, ')
+          ..write('dosesRemaining: $dosesRemaining, ')
           ..write('isActive: $isActive, ')
-          ..write('isPaused: $isPaused, ')
-          ..write('dosesRemaining: $dosesRemaining')
+          ..write('isPaused: $isPaused')
           ..write(')'))
         .toString();
   }
@@ -611,17 +633,18 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     id,
     drugName,
     drugDosage,
+    doseAmount,
+    doseUnit,
     takingFrequency,
-    reminderHour,
-    reminderMinute,
+    reminderTimes,
     repeatAfter10Min,
     startDate,
     endDate,
     doseThreshold,
     expiryDate,
+    dosesRemaining,
     isActive,
     isPaused,
-    dosesRemaining,
   );
   @override
   bool operator ==(Object other) =>
@@ -630,70 +653,73 @@ class Therapy extends DataClass implements Insertable<Therapy> {
           other.id == this.id &&
           other.drugName == this.drugName &&
           other.drugDosage == this.drugDosage &&
+          other.doseAmount == this.doseAmount &&
+          other.doseUnit == this.doseUnit &&
           other.takingFrequency == this.takingFrequency &&
-          other.reminderHour == this.reminderHour &&
-          other.reminderMinute == this.reminderMinute &&
+          other.reminderTimes == this.reminderTimes &&
           other.repeatAfter10Min == this.repeatAfter10Min &&
           other.startDate == this.startDate &&
           other.endDate == this.endDate &&
           other.doseThreshold == this.doseThreshold &&
           other.expiryDate == this.expiryDate &&
+          other.dosesRemaining == this.dosesRemaining &&
           other.isActive == this.isActive &&
-          other.isPaused == this.isPaused &&
-          other.dosesRemaining == this.dosesRemaining);
+          other.isPaused == this.isPaused);
 }
 
 class TherapiesCompanion extends UpdateCompanion<Therapy> {
   final Value<int> id;
   final Value<String> drugName;
   final Value<String> drugDosage;
+  final Value<String> doseAmount;
+  final Value<String> doseUnit;
   final Value<TakingFrequency> takingFrequency;
-  final Value<int> reminderHour;
-  final Value<int> reminderMinute;
+  final Value<List<String>> reminderTimes;
   final Value<bool> repeatAfter10Min;
   final Value<DateTime> startDate;
   final Value<DateTime> endDate;
   final Value<int> doseThreshold;
   final Value<DateTime?> expiryDate;
+  final Value<int?> dosesRemaining;
   final Value<bool> isActive;
   final Value<bool> isPaused;
-  final Value<int?> dosesRemaining;
   const TherapiesCompanion({
     this.id = const Value.absent(),
     this.drugName = const Value.absent(),
     this.drugDosage = const Value.absent(),
+    this.doseAmount = const Value.absent(),
+    this.doseUnit = const Value.absent(),
     this.takingFrequency = const Value.absent(),
-    this.reminderHour = const Value.absent(),
-    this.reminderMinute = const Value.absent(),
+    this.reminderTimes = const Value.absent(),
     this.repeatAfter10Min = const Value.absent(),
     this.startDate = const Value.absent(),
     this.endDate = const Value.absent(),
     this.doseThreshold = const Value.absent(),
     this.expiryDate = const Value.absent(),
+    this.dosesRemaining = const Value.absent(),
     this.isActive = const Value.absent(),
     this.isPaused = const Value.absent(),
-    this.dosesRemaining = const Value.absent(),
   });
   TherapiesCompanion.insert({
     this.id = const Value.absent(),
     required String drugName,
     required String drugDosage,
+    this.doseAmount = const Value.absent(),
+    this.doseUnit = const Value.absent(),
     required TakingFrequency takingFrequency,
-    required int reminderHour,
-    required int reminderMinute,
+    required List<String> reminderTimes,
     required bool repeatAfter10Min,
     required DateTime startDate,
     required DateTime endDate,
     required int doseThreshold,
     this.expiryDate = const Value.absent(),
+    this.dosesRemaining = const Value.absent(),
     this.isActive = const Value.absent(),
     this.isPaused = const Value.absent(),
-    this.dosesRemaining = const Value.absent(),
   }) : drugName = Value(drugName),
        drugDosage = Value(drugDosage),
        takingFrequency = Value(takingFrequency),
-       reminderHour = Value(reminderHour),
-       reminderMinute = Value(reminderMinute),
+       reminderTimes = Value(reminderTimes),
        repeatAfter10Min = Value(repeatAfter10Min),
        startDate = Value(startDate),
        endDate = Value(endDate),
@@ -702,33 +728,35 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     Expression<int>? id,
     Expression<String>? drugName,
     Expression<String>? drugDosage,
+    Expression<String>? doseAmount,
+    Expression<String>? doseUnit,
     Expression<String>? takingFrequency,
-    Expression<int>? reminderHour,
-    Expression<int>? reminderMinute,
+    Expression<String>? reminderTimes,
     Expression<bool>? repeatAfter10Min,
     Expression<DateTime>? startDate,
     Expression<DateTime>? endDate,
     Expression<int>? doseThreshold,
     Expression<DateTime>? expiryDate,
+    Expression<int>? dosesRemaining,
     Expression<bool>? isActive,
     Expression<bool>? isPaused,
-    Expression<int>? dosesRemaining,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (drugName != null) 'drug_name': drugName,
       if (drugDosage != null) 'drug_dosage': drugDosage,
+      if (doseAmount != null) 'dose_amount': doseAmount,
+      if (doseUnit != null) 'dose_unit': doseUnit,
       if (takingFrequency != null) 'taking_frequency': takingFrequency,
-      if (reminderHour != null) 'reminder_hour': reminderHour,
-      if (reminderMinute != null) 'reminder_minute': reminderMinute,
+      if (reminderTimes != null) 'reminder_times': reminderTimes,
       if (repeatAfter10Min != null) 'repeat_after10_min': repeatAfter10Min,
       if (startDate != null) 'start_date': startDate,
       if (endDate != null) 'end_date': endDate,
       if (doseThreshold != null) 'dose_threshold': doseThreshold,
       if (expiryDate != null) 'expiry_date': expiryDate,
+      if (dosesRemaining != null) 'doses_remaining': dosesRemaining,
       if (isActive != null) 'is_active': isActive,
       if (isPaused != null) 'is_paused': isPaused,
-      if (dosesRemaining != null) 'doses_remaining': dosesRemaining,
     });
   }
 
@@ -736,33 +764,35 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     Value<int>? id,
     Value<String>? drugName,
     Value<String>? drugDosage,
+    Value<String>? doseAmount,
+    Value<String>? doseUnit,
     Value<TakingFrequency>? takingFrequency,
-    Value<int>? reminderHour,
-    Value<int>? reminderMinute,
+    Value<List<String>>? reminderTimes,
     Value<bool>? repeatAfter10Min,
     Value<DateTime>? startDate,
     Value<DateTime>? endDate,
     Value<int>? doseThreshold,
     Value<DateTime?>? expiryDate,
+    Value<int?>? dosesRemaining,
     Value<bool>? isActive,
     Value<bool>? isPaused,
-    Value<int?>? dosesRemaining,
   }) {
     return TherapiesCompanion(
       id: id ?? this.id,
       drugName: drugName ?? this.drugName,
       drugDosage: drugDosage ?? this.drugDosage,
+      doseAmount: doseAmount ?? this.doseAmount,
+      doseUnit: doseUnit ?? this.doseUnit,
       takingFrequency: takingFrequency ?? this.takingFrequency,
-      reminderHour: reminderHour ?? this.reminderHour,
-      reminderMinute: reminderMinute ?? this.reminderMinute,
+      reminderTimes: reminderTimes ?? this.reminderTimes,
       repeatAfter10Min: repeatAfter10Min ?? this.repeatAfter10Min,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       doseThreshold: doseThreshold ?? this.doseThreshold,
       expiryDate: expiryDate ?? this.expiryDate,
+      dosesRemaining: dosesRemaining ?? this.dosesRemaining,
       isActive: isActive ?? this.isActive,
       isPaused: isPaused ?? this.isPaused,
-      dosesRemaining: dosesRemaining ?? this.dosesRemaining,
     );
   }
 
@@ -778,16 +808,21 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     if (drugDosage.present) {
       map['drug_dosage'] = Variable<String>(drugDosage.value);
     }
+    if (doseAmount.present) {
+      map['dose_amount'] = Variable<String>(doseAmount.value);
+    }
+    if (doseUnit.present) {
+      map['dose_unit'] = Variable<String>(doseUnit.value);
+    }
     if (takingFrequency.present) {
       map['taking_frequency'] = Variable<String>(
         $TherapiesTable.$convertertakingFrequency.toSql(takingFrequency.value),
       );
     }
-    if (reminderHour.present) {
-      map['reminder_hour'] = Variable<int>(reminderHour.value);
-    }
-    if (reminderMinute.present) {
-      map['reminder_minute'] = Variable<int>(reminderMinute.value);
+    if (reminderTimes.present) {
+      map['reminder_times'] = Variable<String>(
+        $TherapiesTable.$converterreminderTimes.toSql(reminderTimes.value),
+      );
     }
     if (repeatAfter10Min.present) {
       map['repeat_after10_min'] = Variable<bool>(repeatAfter10Min.value);
@@ -804,14 +839,14 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     if (expiryDate.present) {
       map['expiry_date'] = Variable<DateTime>(expiryDate.value);
     }
+    if (dosesRemaining.present) {
+      map['doses_remaining'] = Variable<int>(dosesRemaining.value);
+    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
     if (isPaused.present) {
       map['is_paused'] = Variable<bool>(isPaused.value);
-    }
-    if (dosesRemaining.present) {
-      map['doses_remaining'] = Variable<int>(dosesRemaining.value);
     }
     return map;
   }
@@ -822,17 +857,18 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
           ..write('id: $id, ')
           ..write('drugName: $drugName, ')
           ..write('drugDosage: $drugDosage, ')
+          ..write('doseAmount: $doseAmount, ')
+          ..write('doseUnit: $doseUnit, ')
           ..write('takingFrequency: $takingFrequency, ')
-          ..write('reminderHour: $reminderHour, ')
-          ..write('reminderMinute: $reminderMinute, ')
+          ..write('reminderTimes: $reminderTimes, ')
           ..write('repeatAfter10Min: $repeatAfter10Min, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
           ..write('doseThreshold: $doseThreshold, ')
           ..write('expiryDate: $expiryDate, ')
+          ..write('dosesRemaining: $dosesRemaining, ')
           ..write('isActive: $isActive, ')
-          ..write('isPaused: $isPaused, ')
-          ..write('dosesRemaining: $dosesRemaining')
+          ..write('isPaused: $isPaused')
           ..write(')'))
         .toString();
   }
@@ -1226,34 +1262,36 @@ typedef $$TherapiesTableCreateCompanionBuilder =
       Value<int> id,
       required String drugName,
       required String drugDosage,
+      Value<String> doseAmount,
+      Value<String> doseUnit,
       required TakingFrequency takingFrequency,
-      required int reminderHour,
-      required int reminderMinute,
+      required List<String> reminderTimes,
       required bool repeatAfter10Min,
       required DateTime startDate,
       required DateTime endDate,
       required int doseThreshold,
       Value<DateTime?> expiryDate,
+      Value<int?> dosesRemaining,
       Value<bool> isActive,
       Value<bool> isPaused,
-      Value<int?> dosesRemaining,
     });
 typedef $$TherapiesTableUpdateCompanionBuilder =
     TherapiesCompanion Function({
       Value<int> id,
       Value<String> drugName,
       Value<String> drugDosage,
+      Value<String> doseAmount,
+      Value<String> doseUnit,
       Value<TakingFrequency> takingFrequency,
-      Value<int> reminderHour,
-      Value<int> reminderMinute,
+      Value<List<String>> reminderTimes,
       Value<bool> repeatAfter10Min,
       Value<DateTime> startDate,
       Value<DateTime> endDate,
       Value<int> doseThreshold,
       Value<DateTime?> expiryDate,
+      Value<int?> dosesRemaining,
       Value<bool> isActive,
       Value<bool> isPaused,
-      Value<int?> dosesRemaining,
     });
 
 final class $$TherapiesTableReferences
@@ -1306,20 +1344,26 @@ class $$TherapiesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get doseAmount => $composableBuilder(
+    column: $table.doseAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get doseUnit => $composableBuilder(
+    column: $table.doseUnit,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnWithTypeConverterFilters<TakingFrequency, TakingFrequency, String>
   get takingFrequency => $composableBuilder(
     column: $table.takingFrequency,
     builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
-  ColumnFilters<int> get reminderHour => $composableBuilder(
-    column: $table.reminderHour,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get reminderMinute => $composableBuilder(
-    column: $table.reminderMinute,
-    builder: (column) => ColumnFilters(column),
+  ColumnWithTypeConverterFilters<List<String>, List<String>, String>
+  get reminderTimes => $composableBuilder(
+    column: $table.reminderTimes,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnFilters<bool> get repeatAfter10Min => $composableBuilder(
@@ -1347,6 +1391,11 @@ class $$TherapiesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get dosesRemaining => $composableBuilder(
+    column: $table.dosesRemaining,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnFilters(column),
@@ -1354,11 +1403,6 @@ class $$TherapiesTableFilterComposer
 
   ColumnFilters<bool> get isPaused => $composableBuilder(
     column: $table.isPaused,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get dosesRemaining => $composableBuilder(
-    column: $table.dosesRemaining,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1412,18 +1456,23 @@ class $$TherapiesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get doseAmount => $composableBuilder(
+    column: $table.doseAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get doseUnit => $composableBuilder(
+    column: $table.doseUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get takingFrequency => $composableBuilder(
     column: $table.takingFrequency,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get reminderHour => $composableBuilder(
-    column: $table.reminderHour,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get reminderMinute => $composableBuilder(
-    column: $table.reminderMinute,
+  ColumnOrderings<String> get reminderTimes => $composableBuilder(
+    column: $table.reminderTimes,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -1452,6 +1501,11 @@ class $$TherapiesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get dosesRemaining => $composableBuilder(
+    column: $table.dosesRemaining,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
@@ -1459,11 +1513,6 @@ class $$TherapiesTableOrderingComposer
 
   ColumnOrderings<bool> get isPaused => $composableBuilder(
     column: $table.isPaused,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get dosesRemaining => $composableBuilder(
-    column: $table.dosesRemaining,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -1488,21 +1537,25 @@ class $$TherapiesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get doseAmount => $composableBuilder(
+    column: $table.doseAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get doseUnit =>
+      $composableBuilder(column: $table.doseUnit, builder: (column) => column);
+
   GeneratedColumnWithTypeConverter<TakingFrequency, String>
   get takingFrequency => $composableBuilder(
     column: $table.takingFrequency,
     builder: (column) => column,
   );
 
-  GeneratedColumn<int> get reminderHour => $composableBuilder(
-    column: $table.reminderHour,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<int> get reminderMinute => $composableBuilder(
-    column: $table.reminderMinute,
-    builder: (column) => column,
-  );
+  GeneratedColumnWithTypeConverter<List<String>, String> get reminderTimes =>
+      $composableBuilder(
+        column: $table.reminderTimes,
+        builder: (column) => column,
+      );
 
   GeneratedColumn<bool> get repeatAfter10Min => $composableBuilder(
     column: $table.repeatAfter10Min,
@@ -1525,16 +1578,16 @@ class $$TherapiesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get dosesRemaining => $composableBuilder(
+    column: $table.dosesRemaining,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
   GeneratedColumn<bool> get isPaused =>
       $composableBuilder(column: $table.isPaused, builder: (column) => column);
-
-  GeneratedColumn<int> get dosesRemaining => $composableBuilder(
-    column: $table.dosesRemaining,
-    builder: (column) => column,
-  );
 
   Expression<T> medicationLogsRefs<T extends Object>(
     Expression<T> Function($$MedicationLogsTableAnnotationComposer a) f,
@@ -1593,64 +1646,68 @@ class $$TherapiesTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> drugName = const Value.absent(),
                 Value<String> drugDosage = const Value.absent(),
+                Value<String> doseAmount = const Value.absent(),
+                Value<String> doseUnit = const Value.absent(),
                 Value<TakingFrequency> takingFrequency = const Value.absent(),
-                Value<int> reminderHour = const Value.absent(),
-                Value<int> reminderMinute = const Value.absent(),
+                Value<List<String>> reminderTimes = const Value.absent(),
                 Value<bool> repeatAfter10Min = const Value.absent(),
                 Value<DateTime> startDate = const Value.absent(),
                 Value<DateTime> endDate = const Value.absent(),
                 Value<int> doseThreshold = const Value.absent(),
                 Value<DateTime?> expiryDate = const Value.absent(),
+                Value<int?> dosesRemaining = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<bool> isPaused = const Value.absent(),
-                Value<int?> dosesRemaining = const Value.absent(),
               }) => TherapiesCompanion(
                 id: id,
                 drugName: drugName,
                 drugDosage: drugDosage,
+                doseAmount: doseAmount,
+                doseUnit: doseUnit,
                 takingFrequency: takingFrequency,
-                reminderHour: reminderHour,
-                reminderMinute: reminderMinute,
+                reminderTimes: reminderTimes,
                 repeatAfter10Min: repeatAfter10Min,
                 startDate: startDate,
                 endDate: endDate,
                 doseThreshold: doseThreshold,
                 expiryDate: expiryDate,
+                dosesRemaining: dosesRemaining,
                 isActive: isActive,
                 isPaused: isPaused,
-                dosesRemaining: dosesRemaining,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String drugName,
                 required String drugDosage,
+                Value<String> doseAmount = const Value.absent(),
+                Value<String> doseUnit = const Value.absent(),
                 required TakingFrequency takingFrequency,
-                required int reminderHour,
-                required int reminderMinute,
+                required List<String> reminderTimes,
                 required bool repeatAfter10Min,
                 required DateTime startDate,
                 required DateTime endDate,
                 required int doseThreshold,
                 Value<DateTime?> expiryDate = const Value.absent(),
+                Value<int?> dosesRemaining = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<bool> isPaused = const Value.absent(),
-                Value<int?> dosesRemaining = const Value.absent(),
               }) => TherapiesCompanion.insert(
                 id: id,
                 drugName: drugName,
                 drugDosage: drugDosage,
+                doseAmount: doseAmount,
+                doseUnit: doseUnit,
                 takingFrequency: takingFrequency,
-                reminderHour: reminderHour,
-                reminderMinute: reminderMinute,
+                reminderTimes: reminderTimes,
                 repeatAfter10Min: repeatAfter10Min,
                 startDate: startDate,
                 endDate: endDate,
                 doseThreshold: doseThreshold,
                 expiryDate: expiryDate,
+                dosesRemaining: dosesRemaining,
                 isActive: isActive,
                 isPaused: isPaused,
-                dosesRemaining: dosesRemaining,
               ),
           withReferenceMapper: (p0) => p0
               .map(

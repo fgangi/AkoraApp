@@ -1,12 +1,12 @@
-import 'package:akora_app/data/sources/local/app_database.dart';
+import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:akora_app/core/services/notification_service.dart';
-import 'package:akora_app/main.dart'; // To access the global 'db' instance
+import 'package:akora_app/data/sources/local/app_database.dart';
+import 'package:akora_app/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'; // For TimeOfDay
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:akora_app/core/navigation/app_router.dart';
-import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/timezone.dart' as tz; // Keep timezone import for safety
 
 class TherapyCard extends StatefulWidget {
   final Therapy therapy;
@@ -18,93 +18,89 @@ class TherapyCard extends StatefulWidget {
 }
 
 class _TherapyCardState extends State<TherapyCard> {
-  // A stream that will tell us if today's dose has been logged
-  late Stream<MedicationLog?> _logStream;
-  
+  // Now we watch a list of logs for today, to handle multiple doses
+  late Stream<List<MedicationLog>> _logsStreamForToday;
+
   @override
   void initState() {
     super.initState();
-    // Subscribe to the stream that watches for a log entry for this specific therapy for today.
-    _logStream = db.watchDoseLogForDay(
+    // This query is slightly different. Instead of watchSingleOrNull, we watch a list.
+    _logsStreamForToday = db.watchDoseLogsForDay(
       therapyId: widget.therapy.id,
       day: DateTime.now(),
     );
   }
 
-  void _markAsTaken() async { // Make the method async
-    final now = DateTime.now();
-    final scheduledTimeForToday = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      widget.therapy.reminderHour,
-      widget.therapy.reminderMinute,
-    );
+  // --- NEW HELPER METHOD ---
+  // Determines which dose is the "current" one based on the time of day.
+  TimeOfDay _getCurrentDoseTime() {
+    final now = TimeOfDay.now();
+    
+    // Convert reminder time strings to TimeOfDay objects
+    final reminderTimes = widget.therapy.reminderTimes.map((t) {
+      final parts = t.split(':');
+      return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+    }).toList();
 
-    // We need to know what the count will be *after* we decrement it.
+    // Find the last scheduled time that has passed or is now
+    TimeOfDay? relevantTime;
+    for (final time in reminderTimes) {
+      final timeMinutes = time.hour * 60 + time.minute;
+      final nowMinutes = now.hour * 60 + now.minute;
+      if (timeMinutes <= nowMinutes) {
+        relevantTime = time;
+      } else {
+        // If we find a time in the future, we're done.
+        break;
+      }
+    }
+    
+    // If no time has passed yet today, default to the first dose.
+    // If all times have passed, default to the last dose.
+    return relevantTime ?? reminderTimes.first;
+  }
+  
+  // --- REFACTORED METHODS ---
+
+  void _markAsTaken(TimeOfDay doseTime) async {
     if (widget.therapy.dosesRemaining != null) {
       final newDoseCount = widget.therapy.dosesRemaining! - 1;
-      
-      // Check if the new count has hit the threshold
-      if (newDoseCount == widget.therapy.doseThreshold) {
-        // If it has, trigger the low stock notification
-        await NotificationService().scheduleLowStockNotification(
+      if (newDoseCount <= widget.therapy.doseThreshold) {
+        await NotificationService().triggerLowStockNotification(
           therapyId: widget.therapy.id,
           drugName: widget.therapy.drugName,
           remainingDoses: newDoseCount,
         );
       }
     }
-    
-    // Now, log the dose and decrement in the database
-    await db.logDoseTaken(
-      therapyId: widget.therapy.id,
-      scheduledTime: scheduledTimeForToday,
-    );
 
-    // Cancel today's upcoming notification
-    NotificationService().cancelDailyNotification(widget.therapy.id, DateTime.now());
+    final now = DateTime.now();
+    final scheduledTimeForToday = DateTime(now.year, now.month, now.day, doseTime.hour, doseTime.minute);
+    
+    await db.logDoseTaken(therapyId: widget.therapy.id, scheduledTime: scheduledTimeForToday);
+
+    // Cancel and reschedule is a safe way to handle notification updates
+    await NotificationService().cancelTherapyNotifications(widget.therapy);
+    await NotificationService().scheduleNotificationForTherapy(widget.therapy);
   }
 
-  void _undoTaken() {
+  void _undoTaken(TimeOfDay doseTime) async {
     final now = DateTime.now();
-    final scheduledTimeForToday = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      widget.therapy.reminderHour,
-      widget.therapy.reminderMinute,
-    );
+    final scheduledTimeForToday = DateTime(now.year, now.month, now.day, doseTime.hour, doseTime.minute);
     
-    // Remove the log from the database
-    db.removeDoseLog(
-      therapyId: widget.therapy.id,
-      scheduledTime: scheduledTimeForToday,
-    );
+    await db.removeDoseLog(therapyId: widget.therapy.id, scheduledTime: scheduledTimeForToday);
 
-    // --- Reschedule today's notification IF it's still in the future ---
-    final scheduledDateTime = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      widget.therapy.reminderHour,
-      widget.therapy.reminderMinute,
-    );
-
-    if (scheduledDateTime.isAfter(tz.TZDateTime.now(tz.local))) {
-      NotificationService().scheduleNotificationForTherapy(widget.therapy);
-      // Note: This reschedules ALL future notifications for the therapy. A more optimized
-      // version would just schedule today's, but this is safer and works well.
-    }
+    // Reschedule all notifications to bring back the undone one (if it's in the future)
+    await NotificationService().cancelTherapyNotifications(widget.therapy);
+    await NotificationService().scheduleNotificationForTherapy(widget.therapy);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = CupertinoTheme.of(context);
-    final time = TimeOfDay(hour: widget.therapy.reminderHour, minute: widget.therapy.reminderMinute);
+    // Display all reminder times, joined by a separator
+    final String displayTime = widget.therapy.reminderTimes.join(' - ');
 
-    // Logic to check if the remaining dose count is low
     bool areDosesLow = false;
     if (widget.therapy.dosesRemaining != null) {
       if (widget.therapy.dosesRemaining! <= widget.therapy.doseThreshold) {
@@ -136,10 +132,7 @@ class _TherapyCardState extends State<TherapyCard> {
               children: [
                 FaIcon(FontAwesomeIcons.pills, color: theme.primaryColor, size: 32),
                 const SizedBox(height: 8),
-                Text(
-                  time.format(context),
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+                Text(displayTime, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(width: 16),
@@ -148,42 +141,22 @@ class _TherapyCardState extends State<TherapyCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.therapy.drugName,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
+                  Text(widget.therapy.drugName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  Text(
-                    widget.therapy.drugDosage,
-                    style: const TextStyle(fontSize: 16, color: CupertinoColors.secondaryLabel),
-                  ),
+                  Text(widget.therapy.drugDosage, style: const TextStyle(fontSize: 16, color: CupertinoColors.secondaryLabel)),
                   const SizedBox(height: 8),
-                  
                   Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: theme.primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(6.0),
-                        ),
-                        child: Text(
-                          '1 compressa', // Placeholder for dose amount
-                          style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.w500),
-                        ),
+                        decoration: BoxDecoration(color: theme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(6.0)),
+                        child: Text('${widget.therapy.doseAmount} ${widget.therapy.doseUnit}', style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.w500)),
                       ),
                       const Spacer(),
-                      
-                      // Conditionally display the remaining dose count text
                       if (widget.therapy.dosesRemaining != null)
                         Text(
                           'Rimaste: ${widget.therapy.dosesRemaining}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            // Apply warning style if doses are low
-                            color: areDosesLow ? CupertinoColors.systemRed : CupertinoColors.secondaryLabel,
-                            fontWeight: areDosesLow ? FontWeight.bold : FontWeight.normal,
-                          ),
+                          style: TextStyle(fontSize: 14, color: areDosesLow ? CupertinoColors.systemRed : CupertinoColors.secondaryLabel, fontWeight: areDosesLow ? FontWeight.bold : FontWeight.normal),
                         ),
                     ],
                   ),
@@ -191,32 +164,34 @@ class _TherapyCardState extends State<TherapyCard> {
               ),
             ),
             const SizedBox(width: 8),
-
             // Checkmark Button
-            StreamBuilder<MedicationLog?>(
-              stream: _logStream,
+            StreamBuilder<List<MedicationLog>>( // Now watches a List of logs
+              stream: _logsStreamForToday,
               builder: (context, snapshot) {
-                final bool isTaken = snapshot.hasData && snapshot.data != null;
+                final takenLogs = snapshot.data ?? [];
+                
+                // Determine which dose we are currently interacting with
+                final relevantDoseTime = _getCurrentDoseTime();
+                
+                // Check if this specific dose has been taken
+                final isTaken = takenLogs.any((log) => 
+                    log.scheduledDoseTime.hour == relevantDoseTime.hour && 
+                    log.scheduledDoseTime.minute == relevantDoseTime.minute);
 
                 return GestureDetector(
-                  // If it's taken, the tap action is _undoTaken.
-                  // If it's not taken, the tap action is _markAsTaken.
-                  onTap: isTaken ? _undoTaken : _markAsTaken,
+                  onTap: () {
+                    if (isTaken) {
+                      _undoTaken(relevantDoseTime);
+                    } else {
+                      _markAsTaken(relevantDoseTime);
+                    }
+                  },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     width: 60,
                     height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isTaken ? CupertinoColors.systemGreen : CupertinoColors.systemGrey5,
-                    ),
-                    child: Center(
-                      child: FaIcon(
-                        FontAwesomeIcons.check,
-                        color: isTaken ? CupertinoColors.white : CupertinoColors.systemGrey,
-                        size: 24,
-                      ),
-                    ),
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: isTaken ? CupertinoColors.systemGreen : CupertinoColors.systemGrey5),
+                    child: Center(child: FaIcon(FontAwesomeIcons.check, color: isTaken ? CupertinoColors.white : CupertinoColors.systemGrey, size: 24)),
                   ),
                 );
               },

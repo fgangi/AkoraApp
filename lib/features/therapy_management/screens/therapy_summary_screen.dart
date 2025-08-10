@@ -6,14 +6,12 @@ import 'package:akora_app/features/therapy_management/models/therapy_setup_model
 import 'package:akora_app/main.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class TherapySummaryScreen extends StatefulWidget {
-  // This screen can be entered in two ways:
-  // 1. From the setup flow, with 'setupData'.
-  // 2. From the detail screen for editing, with 'initialTherapy'.
   final TherapySetupData? setupData;
   final Therapy? initialTherapy;
 
@@ -21,55 +19,44 @@ class TherapySummaryScreen extends StatefulWidget {
     super.key,
     this.setupData,
     this.initialTherapy,
-  }) : assert(setupData != null || initialTherapy != null,
-            'Either setupData or initialTherapy must be provided');
+  }) : assert(setupData != null || initialTherapy != null);
 
   @override
   State<TherapySummaryScreen> createState() => _TherapySummaryScreenState();
 }
 
 class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
-  // The local state holds the current data, which can be updated after returning from an edit screen.
   late TherapySetupData currentData;
 
   @override
   void initState() {
     super.initState();
-    // Initialize the state from whichever source was provided.
-    // If we're editing, we create the setup model from the existing therapy.
     currentData = widget.setupData ?? TherapySetupData.fromTherapy(widget.initialTherapy!);
   }
 
   String _formatFrequency(BuildContext context) {
-    // Reads from the 'currentData' state variable
+    // Join all the times with a comma, e.g., "08:30, 20:00"
+    final timesString = currentData.reminderTimes.join(', ');
+
     switch (currentData.selectedFrequency) {
       case TakingFrequency.onceDaily:
-        return 'Ogni giorno alle ${currentData.selectedTime.format(context)}';
+        return 'Ogni giorno alle $timesString';
       case TakingFrequency.twiceDaily:
-        return 'Due volte al giorno';
+        return 'Due volte al giorno ($timesString)';
       case TakingFrequency.onceWeekly:
-        return 'Una volta a settimana';
+        return 'Una volta a settimana alle $timesString';
       case TakingFrequency.other:
         return 'Frequenza personalizzata';
     }
   }
 
-  // --- NAVIGATION METHODS FOR EDIT BUTTONS ---
-
-  // A generic helper for launching an edit screen and updating the local state with the result.
   Future<void> _launchEditScreen(String routeName) async {
     currentData.isSingleEditMode = true;
-
-    final result = await context.pushNamed(
-      routeName,
-      extra: currentData, // Pass the current, up-to-date data model
-    );
-
-    // When the edit screen 'pops' with data, this will be the result.
+    final result = await context.pushNamed(routeName, extra: currentData);
     if (result is TherapySetupData && mounted) {
       result.isSingleEditMode = false;
       setState(() {
-        currentData = result; // Update the UI to reflect the changes
+        currentData = result;
       });
     }
   }
@@ -83,16 +70,32 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
         
         final updatedTherapy = currentData.initialTherapy!.copyWith(
           takingFrequency: currentData.selectedFrequency,
-          reminderHour: currentData.selectedTime.hour,
-          reminderMinute: currentData.selectedTime.minute,
+          reminderTimes: currentData.reminderTimes,
           repeatAfter10Min: currentData.repeatAfter10Min,
           startDate: currentData.startDate,
           endDate: currentData.endDate,
           doseThreshold: currentData.doseThreshold,
           expiryDate: Value(currentData.expiryDate),
           dosesRemaining: Value(currentData.initialDoses),
+          doseAmount: currentData.doseAmount,
+          doseUnit: currentData.doseUnit,
         );
         await db.updateTherapy(updatedTherapy);
+        
+        // --- CHECK LOW STOCK ON UPDATE ---
+        if (updatedTherapy.dosesRemaining != null && 
+            updatedTherapy.dosesRemaining! <= updatedTherapy.doseThreshold) {
+          await NotificationService().triggerLowStockNotification(
+            therapyId: updatedTherapy.id,
+            drugName: updatedTherapy.drugName,
+            remainingDoses: updatedTherapy.dosesRemaining!,
+          );
+        } else {
+          // If the user updated the count to be ABOVE the threshold, cancel any old warning.
+          await NotificationService().cancelLowStockNotification(updatedTherapy.id);
+        }
+
+        // Reschedule other notifications
         await NotificationService().scheduleNotificationForTherapy(updatedTherapy);
         await NotificationService().scheduleExpiryNotification(updatedTherapy);
         print('--- THERAPY UPDATED AND NOTIFICATIONS RESCHEDULED ---');
@@ -104,18 +107,30 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
           drugName: Value(currentData.currentDrug.name),
           drugDosage: Value(currentData.currentDrug.dosage),
           takingFrequency: Value(currentData.selectedFrequency),
-          reminderHour: Value(currentData.selectedTime.hour),
-          reminderMinute: Value(currentData.selectedTime.minute),
+          reminderTimes: Value(currentData.reminderTimes),
           repeatAfter10Min: Value(currentData.repeatAfter10Min),
           startDate: Value(currentData.startDate),
           endDate: Value(currentData.endDate),
           doseThreshold: Value(currentData.doseThreshold),
           expiryDate: Value(currentData.expiryDate),
           dosesRemaining: Value(currentData.initialDoses),
+          doseAmount: Value(currentData.doseAmount),
+          doseUnit: Value(currentData.doseUnit),
         );
         final newTherapyId = await db.createTherapy(therapyToInsert);
         final newTherapy = await db.getTherapyById(newTherapyId);
         print('--- THERAPY SAVED, SCHEDULING NOTIFICATIONS ---');
+        // --- CHECK LOW STOCK ON CREATE ---
+        if (newTherapy.dosesRemaining != null && 
+            newTherapy.dosesRemaining! <= newTherapy.doseThreshold) {
+          await NotificationService().triggerLowStockNotification(
+            therapyId: newTherapy.id,
+            drugName: newTherapy.drugName,
+            remainingDoses: newTherapy.dosesRemaining!,
+          );
+        }
+
+        // Schedule other notifications
         await NotificationService().scheduleNotificationForTherapy(newTherapy);
         await NotificationService().scheduleExpiryNotification(newTherapy);
       }

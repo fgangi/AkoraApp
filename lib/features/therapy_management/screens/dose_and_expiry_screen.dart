@@ -13,6 +13,8 @@ class DoseAndExpiryScreen extends StatefulWidget {
 }
 
 class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
+  final TextEditingController _doseAmountController = TextEditingController();
+  final TextEditingController _doseUnitController = TextEditingController();
   late int _remainingDosesThreshold;
   DateTime? _expiryDate;
   final TextEditingController _initialDoseController = TextEditingController();
@@ -20,14 +22,28 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
   @override
   void initState() {
     super.initState();
-    _remainingDosesThreshold = widget.initialData.doseThreshold;
-    _expiryDate = widget.initialData.expiryDate;
-    _initialDoseController.text = widget.initialData.initialDoses?.toString() ?? '';
+    if (widget.initialData.initialTherapy != null) {
+      // Edit Mode
+      _remainingDosesThreshold = widget.initialData.doseThreshold;
+      _expiryDate = widget.initialData.expiryDate;
+      _initialDoseController.text = widget.initialData.initialDoses?.toString() ?? '';
+      _doseAmountController.text = widget.initialData.initialTherapy!.doseAmount;
+      _doseUnitController.text = widget.initialData.initialTherapy!.doseUnit;
+    } else {
+      // Create Mode
+      _remainingDosesThreshold = 10;
+      _expiryDate = DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day);
+      _initialDoseController.text = '20';
+      _doseAmountController.text = '1';
+      _doseUnitController.text = 'compressa';
+    }
   }
 
   @override
   void dispose() {
     _initialDoseController.dispose();
+    _doseAmountController.dispose();
+    _doseUnitController.dispose();
     super.dispose();
   }
 
@@ -35,7 +51,9 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
     final updatedData = widget.initialData
       ..doseThreshold = _remainingDosesThreshold
       ..expiryDate = _expiryDate
-      ..initialDoses = int.tryParse(_initialDoseController.text);
+      ..initialDoses = int.tryParse(_initialDoseController.text)
+      ..doseAmount = _doseAmountController.text
+      ..doseUnit = _doseUnitController.text;
 
     if (widget.initialData.isSingleEditMode) {
       context.pop(updatedData);
@@ -67,10 +85,12 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isEditing = widget.initialData.isSingleEditMode;
+
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(widget.initialData.currentDrug.name),
-        previousPageTitle: widget.initialData.isSingleEditMode ? 'Riepilogo' : 'Durata',
+        previousPageTitle: isEditing ? 'Riepilogo' : 'Durata',
       ),
       child: SafeArea(
         child: SingleChildScrollView(
@@ -84,6 +104,38 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
               ),
+              const SizedBox(height: 40),
+              const Text(
+                'Quanto ne assumi ogni volta?',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: CupertinoColors.secondaryLabel),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: CupertinoTextField(
+                      controller: _doseAmountController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      placeholder: 'Quantità',
+                      textAlign: TextAlign.center,
+                      padding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 3,
+                    child: CupertinoTextField(
+                      controller: _doseUnitController,
+                      placeholder: 'es. compressa, gocce',
+                      textAlign: TextAlign.center,
+                      padding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                ],
+              ),
+              // --- END OF ADDED/CORRECTED UI SECTION ---
+
               const SizedBox(height: 40),
               const Text('Quante dosi ci sono nella confezione?', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: CupertinoColors.secondaryLabel)),
               const SizedBox(height: 8),
@@ -108,7 +160,7 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
               const SizedBox(height: 50),
               CupertinoButton.filled(
                 onPressed: _onConfirm,
-                child: Text(widget.initialData.isSingleEditMode ? 'Conferma' : 'Avanti'),
+                child: Text(isEditing ? 'Conferma' : 'Avanti'),
               ),
               const SizedBox(height: 20),
             ],

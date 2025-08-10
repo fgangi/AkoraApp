@@ -27,25 +27,18 @@ class NotificationService {
 
     tz.initializeTimeZones();
     try {
-      // Get the timezone from the native side of the device
       final String timeZoneName = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(timeZoneName));
       debugPrint("Timezone successfully initialized to: $timeZoneName");
     } catch (e) {
       debugPrint("Could not get the device timezone, defaulting to UTC. Error: $e");
-      // Fallback to UTC if it fails for some reason
       tz.setLocalLocation(tz.getLocation('UTC'));
     }
 
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-
     const DarwinInitializationSettings darwinSettings = DarwinInitializationSettings();
-
-    const InitializationSettings settings = InitializationSettings(
-      android: androidSettings,
-      iOS: darwinSettings,
-    );
+    const InitializationSettings settings = InitializationSettings(android: androidSettings, iOS: darwinSettings);
 
     await _plugin.initialize(
       settings,
@@ -56,7 +49,6 @@ class NotificationService {
     );
 
     await _requestPermissions();
-
     _isInitialized = true;
     debugPrint("NotificationService fully initialized.");
   }
@@ -64,13 +56,9 @@ class NotificationService {
   Future<void> _requestPermissions() async {
     bool? result;
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      result = await _plugin
-          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
-          ?.requestPermissions(alert: true, badge: true, sound: true);
+      result = await _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()?.requestPermissions(alert: true, badge: true, sound: true);
     } else if (defaultTargetPlatform == TargetPlatform.android) {
-      result = await _plugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-          ?.requestNotificationsPermission();
+      result = await _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
     }
     debugPrint('Notification permissions request result: $result');
   }
@@ -78,17 +66,23 @@ class NotificationService {
   // --- CORE APP SCHEDULING ---
   Future<void> scheduleNotificationForTherapy(Therapy therapy) async {
     if (!_isInitialized) {
-      debugPrint("NotificationService not initialized. Cannot schedule therapy notification.");
+      debugPrint("NotificationService not initialized.");
       return;
     }
 
-    if (therapy.takingFrequency == TakingFrequency.onceDaily) {
-      final TimeOfDay scheduledTime = TimeOfDay(hour: therapy.reminderHour, minute: therapy.reminderMinute);
+    // This logic handles all frequencies based on the data
+    for (final timeString in therapy.reminderTimes) {
+      final timeParts = timeString.split(':');
+      final scheduledTime = TimeOfDay(hour: int.parse(timeParts[0]), minute: int.parse(timeParts[1]));
 
       for (int i = 0; i <= therapy.endDate.difference(therapy.startDate).inDays; i++) {
         final DateTime currentDay = therapy.startDate.add(Duration(days: i));
         
-        // Use tz.local, which is now guaranteed to be correct
+        // Add weekly check
+        if (therapy.takingFrequency == TakingFrequency.onceWeekly && currentDay.weekday != therapy.startDate.weekday) {
+          continue; // Skip days that don't match the start day for weekly therapies
+        }
+
         final tz.TZDateTime scheduledDate = tz.TZDateTime(
           tz.local,
           currentDay.year,
@@ -102,9 +96,9 @@ class NotificationService {
           continue;
         }
 
-        int dailyId = _generateDailyId(therapy.id, currentDay);
+        int dailyId = _generateUniqueId(therapy.id, currentDay, scheduledTime);
         String title = 'Promemoria: ${therapy.drugName}';
-        String body = 'È ora di prendere la tua dose di ${therapy.drugDosage}.';
+        String body = 'È ora di prendere ${therapy.doseAmount} ${therapy.doseUnit} di ${therapy.drugName} ${therapy.drugDosage}.';
 
         await _plugin.zonedSchedule(
           dailyId,
@@ -112,18 +106,8 @@ class NotificationService {
           body,
           scheduledDate,
           const NotificationDetails(
-            android: AndroidNotificationDetails(
-              'therapy_reminders_channel_id',
-              'Therapy Reminders',
-              channelDescription: 'Reminders for your medication schedule.',
-              importance: Importance.max,
-              priority: Priority.high,
-            ),
-            iOS: DarwinNotificationDetails(
-              presentAlert: true,
-              presentBadge: true,
-              presentSound: true,
-            ),
+            android: AndroidNotificationDetails('therapy_reminders_channel_id', 'Therapy Reminders', channelDescription: 'Reminders for your medication schedule.', importance: Importance.max, priority: Priority.high),
+            iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
           ),
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         );
@@ -132,134 +116,102 @@ class NotificationService {
     }
   }
 
-  Future<void> scheduleLowStockNotification({
+  // --- EXPIRY NOTIFICATION ---
+  Future<void> scheduleExpiryNotification(Therapy therapy) async {
+    final int expiryId = -therapy.id - 100000; // Use a predictable negative ID
+    await _plugin.cancel(expiryId);
+
+    if (therapy.expiryDate == null || therapy.reminderTimes.isEmpty) return;
+
+    final notificationDate = therapy.expiryDate!.subtract(const Duration(days: 7));
+    final firstTimeParts = therapy.reminderTimes[0].split(':');
+    final scheduledTime = TimeOfDay(hour: int.parse(firstTimeParts[0]), minute: int.parse(firstTimeParts[1]));
+
+    final tz.TZDateTime scheduledDate = tz.TZDateTime(
+      tz.local,
+      notificationDate.year,
+      notificationDate.month,
+      notificationDate.day,
+      scheduledTime.hour,
+      scheduledTime.minute,
+    );
+
+    if (scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) {
+      // Logic for immediate notification if expiry is soon can be added here
+      return;
+    }
+
+    final String title = 'Farmaco in Scadenza: ${therapy.drugName}';
+    final String body = 'La tua confezione di ${therapy.drugName} scadrà il ${DateFormat('dd/MM/yyyy').format(therapy.expiryDate!)}.';
+
+    await _plugin.zonedSchedule(
+      expiryId,
+      title,
+      body,
+      scheduledDate,
+      const NotificationDetails(
+        android: AndroidNotificationDetails('expiry_alerts_channel_id', 'Avvisi di Scadenza', channelDescription: 'Notifiche per farmaci in scadenza.', importance: Importance.high, priority: Priority.high),
+        iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    );
+    debugPrint('Scheduled expiry notification $expiryId for $scheduledDate');
+  }
+
+  Future<void> triggerLowStockNotification({
     required int therapyId,
     required String drugName,
     required int remainingDoses,
   }) async {
-    // We use a unique, high-number ID for this type of notification
-    // to avoid clashes with daily reminder IDs. Let's use negative IDs.
+    // A predictable negative ID to prevent clashes and allow cancellation.
     final int lowStockId = -therapyId;
 
+    // We use plugin.show() to display the notification immediately.
     await _plugin.show(
       lowStockId,
       'Scorte in Esaurimento: $drugName',
-      'Sono rimaste solo $remainingDoses dosi. È ora di acquistare una nuova confezione.',
+      'Sono rimaste solo $remainingDoses dosi. Ricorda di acquistare una nuova confezione.',
       const NotificationDetails(
         android: AndroidNotificationDetails(
           'low_stock_channel_id',
-          'Low Stock Alerts',
-          channelDescription: 'Notifications for when medication is running low.',
-          importance: Importance.high, // High importance, but not max like a reminder
+          'Avvisi Scorte in Esaurimento',
+          channelDescription: 'Notifiche per farmaci in esaurimento.',
+          importance: Importance.high,
           priority: Priority.high,
         ),
         iOS: DarwinNotificationDetails(
           presentAlert: true,
           presentBadge: true,
           presentSound: true,
-          // You could use a different sound for this type of alert
-          // sound: 'alert.wav',
         ),
       ),
-      payload: 'low_stock_$therapyId', // Optional payload for navigation
+      payload: 'low_stock_$therapyId',
     );
-    debugPrint('Scheduled low stock notification for therapy ID: $therapyId');
+    debugPrint('Triggered low stock notification for therapy ID: $therapyId');
   }
 
-  Future<void> scheduleExpiryNotification(Therapy therapy) async {
-    final int expiryId = 200000 + therapy.id; // Predictable ID
-    await _plugin.cancel(expiryId); // Always cancel the old one first
-
-    if (therapy.expiryDate == null) {
-      return; // No date set, nothing to do.
-    }
-
-    final now = tz.TZDateTime.now(tz.local);
-    final expiryDate = tz.TZDateTime.from(therapy.expiryDate!, tz.local);
-    
-    // Calculate the difference in days between now and the expiry date
-    final differenceInDays = expiryDate.difference(now).inDays;
-
-    tz.TZDateTime? scheduledDate; // Make the scheduledDate nullable
-
-    if (differenceInDays >= 7) {
-      // --- Case 1: More than 7 days away ---
-      // Schedule it for exactly 7 days before expiry.
-      final notificationDate = therapy.expiryDate!.subtract(const Duration(days: 7));
-      scheduledDate = tz.TZDateTime(
-        tz.local,
-        notificationDate.year,
-        notificationDate.month,
-        notificationDate.day,
-        therapy.reminderHour, // Schedule for the same time as the daily reminder
-        therapy.reminderMinute,
-      );
-      debugPrint('Expiry > 7 days away. Scheduling for $scheduledDate');
-
-    } else if (differenceInDays >= 0) {
-      // --- Case 2: Between 0 and 6 days away ---
-      // The drug is expiring soon! Schedule an immediate notification.
-      // We schedule it for 5 seconds in the future to ensure it fires.
-      scheduledDate = now.add(const Duration(seconds: 5));
-      debugPrint('Expiry < 7 days away. Scheduling for NOW.');
-
-    } else {
-      // --- Case 3: Expired ---
-      // The expiry date is in the past. Do nothing.
-      debugPrint('Expiry date is in the past. No notification scheduled.');
-      return;
-    }
-
-    // If we have a valid scheduled date, proceed with scheduling
-    if (scheduledDate != null) {
-      final String title = 'Farmaco in Scadenza: ${therapy.drugName}';
-      final String body =
-          'La tua confezione di ${therapy.drugName} scadrà il ${DateFormat('dd/MM/yyyy').format(therapy.expiryDate!)}.';
-
-      await _plugin.zonedSchedule(
-        expiryId,
-        title,
-        body,
-        scheduledDate,
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'expiry_alerts_channel_id',
-            'Avvisi di Scadenza',
-            channelDescription: 'Notifiche per farmaci in scadenza.',
-            importance: Importance.high,
-            priority: Priority.high,
-          ),
-          iOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      );
-      debugPrint('Final Expiry Notification scheduled with ID $expiryId for $scheduledDate');
-    }
+  // (In case the user updates their dose count upwards)
+  Future<void> cancelLowStockNotification(int therapyId) async {
+    final int lowStockId = -therapyId;
+    await _plugin.cancel(lowStockId);
   }
 
-  Future<void> cancelExpiryNotification(int therapyId) async {
-    final int expiryId = 200000 + therapyId;
-    await _plugin.cancel(expiryId);
-    debugPrint('Cancelled expiry notification with ID: $expiryId');
-  }
-
-  /// Cancels a single scheduled notification for a specific therapy on a specific day.
-  Future<void> cancelDailyNotification(int therapyId, DateTime day) async {
-    final int dailyId = _generateDailyId(therapyId, day);
-    await _plugin.cancel(dailyId);
-    debugPrint('Cancelled single notification with ID: $dailyId');
-  }
-
+  // --- CANCELLATION LOGIC ---
   Future<void> cancelTherapyNotifications(Therapy therapy) async {
-    for (int i = 0; i <= therapy.endDate.difference(therapy.startDate).inDays; i++) {
-      final DateTime currentDay = therapy.startDate.add(Duration(days: i));
-      int dailyId = _generateDailyId(therapy.id, currentDay);
-      await _plugin.cancel(dailyId);
+    for (final timeString in therapy.reminderTimes) {
+      final timeParts = timeString.split(':');
+      final scheduledTime = TimeOfDay(hour: int.parse(timeParts[0]), minute: int.parse(timeParts[1]));
+
+      for (int i = 0; i <= therapy.endDate.difference(therapy.startDate).inDays; i++) {
+        final DateTime currentDay = therapy.startDate.add(Duration(days: i));
+        int dailyId = _generateUniqueId(therapy.id, currentDay, scheduledTime);
+        await _plugin.cancel(dailyId);
+      }
     }
+    // Also cancel the expiry notification
+    final int expiryId = -therapy.id - 100000;
+    await _plugin.cancel(expiryId);
+
     debugPrint('Cancelled all notifications for therapy ID: ${therapy.id}');
   }
 
@@ -267,11 +219,38 @@ class NotificationService {
     await _plugin.cancelAll();
   }
 
-  // Helper to create predictable, unique IDs for each daily notification
-  int _generateDailyId(int therapyId, DateTime date) {
-    final dayOfYear = int.parse(DateFormat("D").format(date));
-    // Multiply therapyId by a large number (e.g., 1000) to avoid collisions
-    // between different therapies on the same day.
-    return (therapyId * 1000) + dayOfYear;
+  // A unique ID per therapy, per day, per time slot.
+  int _generateUniqueId(int therapyId, DateTime date, TimeOfDay time) {
+    // We need to ensure the ID is a unique 32-bit signed integer.
+    // Max value is 2,147,483,647.
+
+    // Let's create an ID from components:
+    // Therapy ID (up to 999) + Day of Year (1-366) + Time (0-2359)
+    // To prevent overlap, we use multipliers.
+
+    final dayOfYear = int.parse(DateFormat("D").format(date)); // Max 366
+    final timePart = time.hour * 100 + time.minute;             // Max 2359
+
+    // The formula:
+    // therapyId * 1,000,000 gives space for the rest.
+    // dayOfYear * 10,000 gives space for time.
+    // This creates a unique number for every minute of every day for a given therapy.
+    
+    // Example: therapy 1, day 219, time 18:30 (1830)
+    // 1 * 1000000 = 1000000
+    // 219 * 10000 = 2190000
+    // 1830
+    // Total ID = 3191830 (well within the limit)
+
+    // Safety check in case therapyId gets very large
+    if (therapyId > 200) {
+      // If the ID is too big, this scheme could fail. We can use a hashing fallback.
+      // For now, this is robust enough for hundreds of therapies.
+      print("Warning: therapyId is large, which might risk ID collision or overflow.");
+    }
+    
+    final int uniqueId = (therapyId * 1000000) + (dayOfYear * 10000) + timePart;
+
+    return uniqueId;
   }
 }

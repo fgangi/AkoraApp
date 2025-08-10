@@ -4,9 +4,9 @@ import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/data/sources/local/local_drug_data.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart'; 
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show TimeOfDay; // Kept for default TimeOfDay
 import 'package:go_router/go_router.dart';
 
 class DrugSearchScreen extends StatefulWidget {
@@ -33,28 +33,32 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (widget.initialTherapy != null) {
+        // We are in a full edit flow. Create the data model from the existing therapy.
         final setupData = TherapySetupData.fromTherapy(widget.initialTherapy!);
+        // Replace this screen with the frequency screen to continue the flow.
         context.pushReplacementNamed(AppRouter.therapyFrequencyRouteName, extra: setupData);
       }
     });
   }
 
-    void _onDrugSelected(Drug selectedDrug) {
-    // This method is only called when creating a brand new therapy.
+  // --- THIS IS THE CORRECTED METHOD ---
+  void _onDrugSelected(Drug selectedDrug) {
+    // This method is only for creating a brand new therapy.
     final setupData = TherapySetupData(
       currentDrug: selectedDrug,
       // Default values for a new therapy
       selectedFrequency: TakingFrequency.onceDaily,
-      selectedTime: const TimeOfDay(hour: 8, minute: 30),
+      // Use the new reminderTimes list property
+      reminderTimes: const ['08:30'], // Sensible default for once a day
       repeatAfter10Min: false,
       startDate: DateTime.now(),
       endDate: DateTime.now().add(const Duration(days: 7)),
       doseThreshold: 10,
       initialDoses: 20,
       expiryDate: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
-      // In create mode, there is no initial therapy.
+      doseAmount: '1',
+      doseUnit: 'compressa',
       initialTherapy: null,
-      // When creating a new therapy, it is NOT a single edit.
       isSingleEditMode: false,
     );
 
@@ -77,7 +81,7 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
           : sampleItalianDrugs.where((drug) {
               return drug.fullDescription.toLowerCase().contains(query) ||
                   drug.activeIngredient.toLowerCase().contains(query);
-            }).toList(); // cast<Drug>() is often not needed here but is safe
+            }).toList();
 
       if (mounted) {
         setState(() {
