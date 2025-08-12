@@ -75,7 +75,7 @@ class NotificationService {
       final timeParts = timeString.split(':');
       final scheduledTime = TimeOfDay(hour: int.parse(timeParts[0]), minute: int.parse(timeParts[1]));
 
-      for (int i = 0; i <= therapy.endDate.difference(therapy.startDate).inDays; i++) {
+            for (int i = 0; i <= therapy.endDate.difference(therapy.startDate).inDays; i++) {
         final DateTime currentDay = therapy.startDate.add(Duration(days: i));
         
         // Add weekly check
@@ -98,12 +98,17 @@ class NotificationService {
 
         int dailyId = _generateUniqueId(therapy.id, currentDay, scheduledTime);
         String title = 'Promemoria: ${therapy.drugName}';
-        String body = 'È ora di prendere ${therapy.doseAmount} ${therapy.doseUnit} di ${therapy.drugName} ${therapy.drugDosage}.';
+
+        // We dynamically create the "dose" or "dosi" label based on the amount.
+        final int doseAmountNum = int.tryParse(therapy.doseAmount) ?? 1;
+        final String doseLabel = doseAmountNum == 1 ? 'dose' : 'dosi';
+        String body = 'È ora di prendere ${therapy.doseAmount} $doseLabel di ${therapy.drugName} ${therapy.drugDosage}.';
+        // --- END OF CORRECTION ---
 
         await _plugin.zonedSchedule(
           dailyId,
           title,
-          body,
+          body, // Use the corrected body string
           scheduledDate,
           const NotificationDetails(
             android: AndroidNotificationDetails('therapy_reminders_channel_id', 'Therapy Reminders', channelDescription: 'Reminders for your medication schedule.', importance: Importance.max, priority: Priority.high),

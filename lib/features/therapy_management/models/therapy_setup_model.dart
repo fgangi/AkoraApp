@@ -21,7 +21,6 @@ class TherapySetupData {
   Therapy? initialTherapy;
   bool isSingleEditMode;
   String doseAmount;
-  String doseUnit;
 
   TherapySetupData({
     required this.currentDrug,
@@ -35,7 +34,6 @@ class TherapySetupData {
     this.expiryDate,
     this.initialTherapy,
     required this.doseAmount,
-    required this.doseUnit,
     this.isSingleEditMode = false,
   });
 
@@ -61,7 +59,6 @@ class TherapySetupData {
       initialTherapy: therapy,
       isSingleEditMode: false,
       doseAmount: therapy.doseAmount,
-      doseUnit: therapy.doseUnit,
     );
   }
 }

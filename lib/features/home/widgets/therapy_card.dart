@@ -31,7 +31,6 @@ class _TherapyCardState extends State<TherapyCard> {
     );
   }
 
-  // --- NEW HELPER METHOD ---
   // Determines which dose is the "current" one based on the time of day.
   TimeOfDay _getCurrentDoseTime() {
     final now = TimeOfDay.now();
@@ -59,8 +58,6 @@ class _TherapyCardState extends State<TherapyCard> {
     // If all times have passed, default to the last dose.
     return relevantTime ?? reminderTimes.first;
   }
-  
-  // --- REFACTORED METHODS ---
 
   void _markAsTaken(TimeOfDay doseTime) async {
     if (widget.therapy.dosesRemaining != null) {
@@ -98,8 +95,12 @@ class _TherapyCardState extends State<TherapyCard> {
   @override
   Widget build(BuildContext context) {
     final theme = CupertinoTheme.of(context);
-    // Display all reminder times, joined by a separator
-    final String displayTime = widget.therapy.reminderTimes.join(' - ');
+    
+    // Determine the main time to display on the left.
+    // For "twice daily", we might show the next upcoming time. For now, we'll show the first.
+    final String displayTime = widget.therapy.reminderTimes.isNotEmpty
+        ? widget.therapy.reminderTimes[0]
+        : '--:--';
 
     bool areDosesLow = false;
     if (widget.therapy.dosesRemaining != null) {
@@ -113,69 +114,97 @@ class _TherapyCardState extends State<TherapyCard> {
         context.pushNamed(AppRouter.therapyDetailRouteName, extra: widget.therapy);
       },
       child: Container(
-        padding: const EdgeInsets.all(16.0),
+        // Increased vertical padding to make the card taller and cleaner
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
         decoration: BoxDecoration(
-          color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context),
-          boxShadow: [
-            BoxShadow(
-              color: CupertinoColors.systemGrey.withOpacity(0.15),
-              spreadRadius: 1,
-              blurRadius: 5,
-              offset: const Offset(0, 3),
-            )
-          ],
+          color: CupertinoColors.white, // A white background like the mockup
+          // The parent ClipRRect in home_screen.dart handles rounding
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center, // Vertically center align items
           children: [
-            // Left side: Icon and Time
+            // --- Left Section: Icon and Time ---
+            // No fixed width, so the time text won't wrap
             Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                FaIcon(FontAwesomeIcons.pills, color: theme.primaryColor, size: 32),
+                FaIcon(FontAwesomeIcons.pills, color: theme.primaryColor, size: 30),
                 const SizedBox(height: 8),
-                Text(displayTime, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(
+                  displayTime,
+                  style: const TextStyle(
+                    fontSize: 22, // Larger font for the time
+                    fontWeight: FontWeight.bold,
+                    color: CupertinoColors.black,
+                  ),
+                ),
               ],
             ),
             const SizedBox(width: 16),
-            // Middle section: Drug details
+
+            // --- Middle Section: Drug Details ---
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(widget.therapy.drugName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text(
+                    widget.therapy.drugName,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: CupertinoColors.black,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 4),
-                  Text(widget.therapy.drugDosage, style: const TextStyle(fontSize: 16, color: CupertinoColors.secondaryLabel)),
-                  const SizedBox(height: 8),
+                  Text(
+                    widget.therapy.drugDosage,
+                    style: const TextStyle(fontSize: 15, color: CupertinoColors.secondaryLabel),
+                  ),
+                  const SizedBox(height: 10),
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(color: theme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(6.0)),
-                        child: Text('${widget.therapy.doseAmount} ${widget.therapy.doseUnit}', style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.w500)),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: theme.primaryColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: Text(
+                          '${widget.therapy.doseAmount} ${int.tryParse(widget.therapy.doseAmount) == 1 ? "Dose" : "Dosi"}',
+                          style: TextStyle(
+                            color: theme.primaryColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                       const Spacer(),
                       if (widget.therapy.dosesRemaining != null)
                         Text(
                           'Rimaste: ${widget.therapy.dosesRemaining}',
-                          style: TextStyle(fontSize: 14, color: areDosesLow ? CupertinoColors.systemRed : CupertinoColors.secondaryLabel, fontWeight: areDosesLow ? FontWeight.bold : FontWeight.normal),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: areDosesLow ? CupertinoColors.systemRed : CupertinoColors.secondaryLabel,
+                          ),
                         ),
                     ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            // Checkmark Button
-            StreamBuilder<List<MedicationLog>>( // Now watches a List of logs
+            const SizedBox(width: 12),
+
+            // --- Right Section: Checkmark Button ---
+            StreamBuilder<List<MedicationLog>>(
               stream: _logsStreamForToday,
               builder: (context, snapshot) {
                 final takenLogs = snapshot.data ?? [];
-                
-                // Determine which dose we are currently interacting with
                 final relevantDoseTime = _getCurrentDoseTime();
-                
-                // Check if this specific dose has been taken
-                final isTaken = takenLogs.any((log) => 
-                    log.scheduledDoseTime.hour == relevantDoseTime.hour && 
+                final isTaken = takenLogs.any((log) =>
+                    log.scheduledDoseTime.hour == relevantDoseTime.hour &&
                     log.scheduledDoseTime.minute == relevantDoseTime.minute);
 
                 return GestureDetector(
@@ -188,10 +217,19 @@ class _TherapyCardState extends State<TherapyCard> {
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: isTaken ? CupertinoColors.systemGreen : CupertinoColors.systemGrey5),
-                    child: Center(child: FaIcon(FontAwesomeIcons.check, color: isTaken ? CupertinoColors.white : CupertinoColors.systemGrey, size: 24)),
+                    width: 50, // Made slightly smaller to match mockup
+                    height: 50,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isTaken ? CupertinoColors.systemGreen : CupertinoColors.systemGrey5,
+                    ),
+                    child: Center(
+                      child: FaIcon(
+                        FontAwesomeIcons.check,
+                        color: isTaken ? CupertinoColors.white : CupertinoColors.systemGrey,
+                        size: 22,
+                      ),
+                    ),
                   ),
                 );
               },

@@ -110,7 +110,7 @@ class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
                             ),
                           ),
                         SizedBox(
-                          height: 150, // Make pickers a bit smaller
+                          height: 220,
                           child: CupertinoDatePicker(
                             mode: CupertinoDatePickerMode.time,
                             initialDateTime: _selectedDateTimes[index],
@@ -125,23 +125,7 @@ class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
                         const SizedBox(height: 20),
                       ],
                     );
-                  }),
-
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    decoration: BoxDecoration(
-                      color: CupertinoColors.secondarySystemGroupedBackground.resolveFrom(context),
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    child: _buildSwitchRow(
-                      text: 'Ripeti dopo 10 min',
-                      value: _repeatAfter10Min,
-                      onChanged: (bool value) {
-                        setState(() { _repeatAfter10Min = value; });
-                      },
-                    ),
-                  ),
+                  }),                  
                 ],
               ),
             ),

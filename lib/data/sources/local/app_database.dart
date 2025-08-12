@@ -15,7 +15,6 @@ class Therapies extends Table {
   TextColumn get drugName => text()();
   TextColumn get drugDosage => text()();
   TextColumn get doseAmount => text().withDefault(const Constant('1'))();
-  TextColumn get doseUnit => text().withDefault(const Constant('compressa'))();
   TextColumn get takingFrequency => text().map(const TakingFrequencyConverter())();
   TextColumn get reminderTimes => text().map(const ReminderTimesConverter())();
   BoolColumn get repeatAfter10Min => boolean()();
@@ -63,7 +62,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   Future<int> createTherapy(TherapiesCompanion entry) {
     return into(therapies).insert(entry);

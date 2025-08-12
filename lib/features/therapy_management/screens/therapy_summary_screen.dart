@@ -78,7 +78,6 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
           expiryDate: Value(currentData.expiryDate),
           dosesRemaining: Value(currentData.initialDoses),
           doseAmount: currentData.doseAmount,
-          doseUnit: currentData.doseUnit,
         );
         await db.updateTherapy(updatedTherapy);
         
@@ -115,7 +114,6 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
           expiryDate: Value(currentData.expiryDate),
           dosesRemaining: Value(currentData.initialDoses),
           doseAmount: Value(currentData.doseAmount),
-          doseUnit: Value(currentData.doseUnit),
         );
         final newTherapyId = await db.createTherapy(therapyToInsert);
         final newTherapy = await db.getTherapyById(newTherapyId);
@@ -175,10 +173,7 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
                     _buildSummaryRow(
                       icon: FontAwesomeIcons.pills,
                       text: currentData.currentDrug.fullDescription,
-                      onEdit: () {
-                        // Drug cannot be changed once selected in the flow
-                        print('Edit Drug tapped - (Action Disabled)');
-                      },
+                      onEdit: null,
                     ),
                     _buildSummaryRow(
                       icon: CupertinoIcons.time,
@@ -220,12 +215,17 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
     );
   }
 
-  Widget _buildSummaryRow({required IconData icon, required String text, required VoidCallback onEdit}) {
+  Widget _buildSummaryRow({required IconData icon, required String text, VoidCallback? onEdit}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
         children: [
-          FaIcon(icon, color: CupertinoColors.white, size: 24),
+          SizedBox(
+            width: 30, // Adjust this width
+            child: Center(
+              child: FaIcon(icon, color: CupertinoColors.white, size: 24),
+            ),
+          ),
           const SizedBox(width: 20),
           Expanded(
             child: Text(
@@ -238,11 +238,16 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: onEdit,
-            child: const Icon(CupertinoIcons.pencil, color: CupertinoColors.white),
-          ),
+          // If onEdit is not null, show the button.
+          if (onEdit != null)
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: onEdit,
+              child: const Icon(CupertinoIcons.pencil, color: CupertinoColors.white),
+            )
+          // If onEdit is null, show an empty SizedBox to maintain alignment.
+          else
+            const SizedBox(width: 44), // Same approximate width as the button
         ],
       ),
     );

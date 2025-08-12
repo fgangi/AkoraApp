@@ -41,7 +41,6 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
     });
   }
 
-  // --- THIS IS THE CORRECTED METHOD ---
   void _onDrugSelected(Drug selectedDrug) {
     // This method is only for creating a brand new therapy.
     final setupData = TherapySetupData(
@@ -57,7 +56,6 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
       initialDoses: 20,
       expiryDate: DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day),
       doseAmount: '1',
-      doseUnit: 'compressa',
       initialTherapy: null,
       isSingleEditMode: false,
     );
@@ -123,7 +121,6 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
               padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
               child: Column(
                 children: [
-                  const Text('CERCA IL TUO FARMACO', /* ... */),
                   const SizedBox(height: 12),
                   const Text('Inserisci il nome del farmaco.', /* ... */),
                   const SizedBox(height: 20),
@@ -203,7 +200,12 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
         ),
         child: Row(
           children: [
-            FaIcon(icon, color: CupertinoTheme.of(context).primaryColor, size: 28),
+            SizedBox(
+              width: 40, // Adjust this width as needed for your largest icon
+              child: Center(
+                child: FaIcon(icon, color: CupertinoTheme.of(context).primaryColor, size: 28),
+              ),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

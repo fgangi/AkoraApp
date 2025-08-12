@@ -13,37 +13,32 @@ class DoseAndExpiryScreen extends StatefulWidget {
 }
 
 class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
-  final TextEditingController _doseAmountController = TextEditingController();
-  final TextEditingController _doseUnitController = TextEditingController();
+  // State variables
+  late int _doseAmount;
+  late int _initialDoses;
   late int _remainingDosesThreshold;
   DateTime? _expiryDate;
-  final TextEditingController _initialDoseController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     if (widget.initialData.initialTherapy != null) {
-      // Edit Mode
+      // Edit Mode: Pre-fill from existing therapy data
+      _doseAmount = int.tryParse(widget.initialData.doseAmount) ?? 1;
+      _initialDoses = widget.initialData.initialDoses ?? 20;
       _remainingDosesThreshold = widget.initialData.doseThreshold;
       _expiryDate = widget.initialData.expiryDate;
-      _initialDoseController.text = widget.initialData.initialDoses?.toString() ?? '';
-      _doseAmountController.text = widget.initialData.initialTherapy!.doseAmount;
-      _doseUnitController.text = widget.initialData.initialTherapy!.doseUnit;
     } else {
-      // Create Mode
-      _remainingDosesThreshold = 10;
-      _expiryDate = DateTime(DateTime.now().year + 1, DateTime.now().month, DateTime.now().day);
-      _initialDoseController.text = '20';
-      _doseAmountController.text = '1';
-      _doseUnitController.text = 'compressa';
+      // Create Mode: Use defaults from the data model
+      _doseAmount = int.tryParse(widget.initialData.doseAmount) ?? 1;
+      _initialDoses = widget.initialData.initialDoses ?? 20;
+      _remainingDosesThreshold = widget.initialData.doseThreshold;
+      _expiryDate = widget.initialData.expiryDate;
     }
   }
 
   @override
   void dispose() {
-    _initialDoseController.dispose();
-    _doseAmountController.dispose();
-    _doseUnitController.dispose();
     super.dispose();
   }
 
@@ -51,9 +46,8 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
     final updatedData = widget.initialData
       ..doseThreshold = _remainingDosesThreshold
       ..expiryDate = _expiryDate
-      ..initialDoses = int.tryParse(_initialDoseController.text)
-      ..doseAmount = _doseAmountController.text
-      ..doseUnit = _doseUnitController.text;
+      ..initialDoses = _initialDoses
+      ..doseAmount = _doseAmount.toString();
 
     if (widget.initialData.isSingleEditMode) {
       context.pop(updatedData);
@@ -105,57 +99,46 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
                 style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 40),
-              const Text(
-                'Quanto ne assumi ogni volta?',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: CupertinoColors.secondaryLabel),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: CupertinoTextField(
-                      controller: _doseAmountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      placeholder: 'Quantità',
-                      textAlign: TextAlign.center,
-                      padding: const EdgeInsets.all(12),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 3,
-                    child: CupertinoTextField(
-                      controller: _doseUnitController,
-                      placeholder: 'es. compressa, gocce',
-                      textAlign: TextAlign.center,
-                      padding: const EdgeInsets.all(12),
-                    ),
-                  ),
-                ],
-              ),
-              // --- END OF ADDED/CORRECTED UI SECTION ---
 
-              const SizedBox(height: 40),
-              const Text('Quante dosi ci sono nella confezione?', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: CupertinoColors.secondaryLabel)),
-              const SizedBox(height: 8),
-              CupertinoTextField(
-                controller: _initialDoseController,
-                placeholder: 'Es. 20',
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                padding: const EdgeInsets.all(12),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                decoration: BoxDecoration(
-                  color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
+              // --- Dose Amount Stepper ---
+              const Text('Quanto ne assumi ogni volta?', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: CupertinoColors.secondaryLabel)),
+              const SizedBox(height: 12),
+              _buildDoseStepper(
+                value: _doseAmount,
+                onDecrement: () {
+                  if (_doseAmount > 1) setState(() => _doseAmount--);
+                },
+                onIncrement: () => setState(() => _doseAmount++),
+                label: _doseAmount == 1 ? 'Dose' : 'Dosi',
               ),
               const SizedBox(height: 40),
+
+              // --- Initial Doses in Package Stepper ---
+              const Text('Quante dosi ci sono nella confezione?', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: CupertinoColors.secondaryLabel)),
+              const SizedBox(height: 12),
+              _buildDoseStepper(
+                value: _initialDoses,
+                onDecrement: () {
+                  if (_initialDoses > 1) setState(() => _initialDoses--);
+                },
+                onIncrement: () => setState(() => _initialDoses++),
+                label: _initialDoses == 1 ? 'Dose' : 'Dosi',
+              ),
+              const SizedBox(height: 40),
+
+              // --- Low Stock Threshold Stepper ---
               const Text('Avvisami quando restano:', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: CupertinoColors.secondaryLabel)),
               const SizedBox(height: 12),
-              _buildDoseSelector(),
+              _buildDoseStepper(
+                value: _remainingDosesThreshold,
+                onDecrement: () {
+                  if (_remainingDosesThreshold > 1) setState(() => _remainingDosesThreshold--);
+                },
+                onIncrement: () => setState(() => _remainingDosesThreshold++),
+                label: _remainingDosesThreshold == 1 ? 'Dose' : 'Dosi',
+              ),
               const SizedBox(height: 40),
+
               _buildExpiryDateSelector(),
               const SizedBox(height: 50),
               CupertinoButton.filled(
@@ -170,32 +153,37 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
     );
   }
 
-  Widget _buildDoseSelector() {
+  Widget _buildDoseStepper({
+    required int value,
+    required VoidCallback onDecrement,
+    required VoidCallback onIncrement,
+    required String label,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        CupertinoButton(
-          onPressed: () {
-            if (_remainingDosesThreshold > 1) {
-              setState(() => _remainingDosesThreshold--);
-            }
-          },
-          child: const Icon(CupertinoIcons.minus),
-        ),
+        CupertinoButton(onPressed: onDecrement, child: const Icon(CupertinoIcons.minus_circle)),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          width: 80, // Give it a fixed width for consistent alignment
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          margin: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
             color: CupertinoColors.tertiarySystemFill.resolveFrom(context),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Text(_remainingDosesThreshold.toString(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          child: Text(
+            value.toString(),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
         ),
-        CupertinoButton(
-          onPressed: () => setState(() => _remainingDosesThreshold++),
-          child: const Icon(CupertinoIcons.add),
-        ),
+        CupertinoButton(onPressed: onIncrement, child: const Icon(CupertinoIcons.add_circled)),
         const SizedBox(width: 8),
-        const Text('Dosi', style: TextStyle(color: CupertinoColors.secondaryLabel)),
+        // Use a SizedBox to give the label a fixed width, helping to center the whole component
+        SizedBox(
+          width: 50,
+          child: Text(label, style: const TextStyle(color: CupertinoColors.secondaryLabel, fontSize: 18)),
+        ),
       ],
     );
   }

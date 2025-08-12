@@ -56,18 +56,6 @@ class $TherapiesTable extends Therapies
     requiredDuringInsert: false,
     defaultValue: const Constant('1'),
   );
-  static const VerificationMeta _doseUnitMeta = const VerificationMeta(
-    'doseUnit',
-  );
-  @override
-  late final GeneratedColumn<String> doseUnit = GeneratedColumn<String>(
-    'dose_unit',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-    defaultValue: const Constant('compressa'),
-  );
   @override
   late final GeneratedColumnWithTypeConverter<TakingFrequency, String>
   takingFrequency = GeneratedColumn<String>(
@@ -191,7 +179,6 @@ class $TherapiesTable extends Therapies
     drugName,
     drugDosage,
     doseAmount,
-    doseUnit,
     takingFrequency,
     reminderTimes,
     repeatAfter10Min,
@@ -238,12 +225,6 @@ class $TherapiesTable extends Therapies
       context.handle(
         _doseAmountMeta,
         doseAmount.isAcceptableOrUnknown(data['dose_amount']!, _doseAmountMeta),
-      );
-    }
-    if (data.containsKey('dose_unit')) {
-      context.handle(
-        _doseUnitMeta,
-        doseUnit.isAcceptableOrUnknown(data['dose_unit']!, _doseUnitMeta),
       );
     }
     if (data.containsKey('repeat_after10_min')) {
@@ -336,10 +317,6 @@ class $TherapiesTable extends Therapies
         DriftSqlType.string,
         data['${effectivePrefix}dose_amount'],
       )!,
-      doseUnit: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}dose_unit'],
-      )!,
       takingFrequency: $TherapiesTable.$convertertakingFrequency.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -403,7 +380,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
   final String drugName;
   final String drugDosage;
   final String doseAmount;
-  final String doseUnit;
   final TakingFrequency takingFrequency;
   final List<String> reminderTimes;
   final bool repeatAfter10Min;
@@ -419,7 +395,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     required this.drugName,
     required this.drugDosage,
     required this.doseAmount,
-    required this.doseUnit,
     required this.takingFrequency,
     required this.reminderTimes,
     required this.repeatAfter10Min,
@@ -438,7 +413,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     map['drug_name'] = Variable<String>(drugName);
     map['drug_dosage'] = Variable<String>(drugDosage);
     map['dose_amount'] = Variable<String>(doseAmount);
-    map['dose_unit'] = Variable<String>(doseUnit);
     {
       map['taking_frequency'] = Variable<String>(
         $TherapiesTable.$convertertakingFrequency.toSql(takingFrequency),
@@ -470,7 +444,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       drugName: Value(drugName),
       drugDosage: Value(drugDosage),
       doseAmount: Value(doseAmount),
-      doseUnit: Value(doseUnit),
       takingFrequency: Value(takingFrequency),
       reminderTimes: Value(reminderTimes),
       repeatAfter10Min: Value(repeatAfter10Min),
@@ -498,7 +471,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       drugName: serializer.fromJson<String>(json['drugName']),
       drugDosage: serializer.fromJson<String>(json['drugDosage']),
       doseAmount: serializer.fromJson<String>(json['doseAmount']),
-      doseUnit: serializer.fromJson<String>(json['doseUnit']),
       takingFrequency: serializer.fromJson<TakingFrequency>(
         json['takingFrequency'],
       ),
@@ -521,7 +493,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       'drugName': serializer.toJson<String>(drugName),
       'drugDosage': serializer.toJson<String>(drugDosage),
       'doseAmount': serializer.toJson<String>(doseAmount),
-      'doseUnit': serializer.toJson<String>(doseUnit),
       'takingFrequency': serializer.toJson<TakingFrequency>(takingFrequency),
       'reminderTimes': serializer.toJson<List<String>>(reminderTimes),
       'repeatAfter10Min': serializer.toJson<bool>(repeatAfter10Min),
@@ -540,7 +511,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     String? drugName,
     String? drugDosage,
     String? doseAmount,
-    String? doseUnit,
     TakingFrequency? takingFrequency,
     List<String>? reminderTimes,
     bool? repeatAfter10Min,
@@ -556,7 +526,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     drugName: drugName ?? this.drugName,
     drugDosage: drugDosage ?? this.drugDosage,
     doseAmount: doseAmount ?? this.doseAmount,
-    doseUnit: doseUnit ?? this.doseUnit,
     takingFrequency: takingFrequency ?? this.takingFrequency,
     reminderTimes: reminderTimes ?? this.reminderTimes,
     repeatAfter10Min: repeatAfter10Min ?? this.repeatAfter10Min,
@@ -580,7 +549,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       doseAmount: data.doseAmount.present
           ? data.doseAmount.value
           : this.doseAmount,
-      doseUnit: data.doseUnit.present ? data.doseUnit.value : this.doseUnit,
       takingFrequency: data.takingFrequency.present
           ? data.takingFrequency.value
           : this.takingFrequency,
@@ -613,7 +581,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
           ..write('drugName: $drugName, ')
           ..write('drugDosage: $drugDosage, ')
           ..write('doseAmount: $doseAmount, ')
-          ..write('doseUnit: $doseUnit, ')
           ..write('takingFrequency: $takingFrequency, ')
           ..write('reminderTimes: $reminderTimes, ')
           ..write('repeatAfter10Min: $repeatAfter10Min, ')
@@ -634,7 +601,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     drugName,
     drugDosage,
     doseAmount,
-    doseUnit,
     takingFrequency,
     reminderTimes,
     repeatAfter10Min,
@@ -654,7 +620,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
           other.drugName == this.drugName &&
           other.drugDosage == this.drugDosage &&
           other.doseAmount == this.doseAmount &&
-          other.doseUnit == this.doseUnit &&
           other.takingFrequency == this.takingFrequency &&
           other.reminderTimes == this.reminderTimes &&
           other.repeatAfter10Min == this.repeatAfter10Min &&
@@ -672,7 +637,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
   final Value<String> drugName;
   final Value<String> drugDosage;
   final Value<String> doseAmount;
-  final Value<String> doseUnit;
   final Value<TakingFrequency> takingFrequency;
   final Value<List<String>> reminderTimes;
   final Value<bool> repeatAfter10Min;
@@ -688,7 +652,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     this.drugName = const Value.absent(),
     this.drugDosage = const Value.absent(),
     this.doseAmount = const Value.absent(),
-    this.doseUnit = const Value.absent(),
     this.takingFrequency = const Value.absent(),
     this.reminderTimes = const Value.absent(),
     this.repeatAfter10Min = const Value.absent(),
@@ -705,7 +668,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     required String drugName,
     required String drugDosage,
     this.doseAmount = const Value.absent(),
-    this.doseUnit = const Value.absent(),
     required TakingFrequency takingFrequency,
     required List<String> reminderTimes,
     required bool repeatAfter10Min,
@@ -729,7 +691,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     Expression<String>? drugName,
     Expression<String>? drugDosage,
     Expression<String>? doseAmount,
-    Expression<String>? doseUnit,
     Expression<String>? takingFrequency,
     Expression<String>? reminderTimes,
     Expression<bool>? repeatAfter10Min,
@@ -746,7 +707,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
       if (drugName != null) 'drug_name': drugName,
       if (drugDosage != null) 'drug_dosage': drugDosage,
       if (doseAmount != null) 'dose_amount': doseAmount,
-      if (doseUnit != null) 'dose_unit': doseUnit,
       if (takingFrequency != null) 'taking_frequency': takingFrequency,
       if (reminderTimes != null) 'reminder_times': reminderTimes,
       if (repeatAfter10Min != null) 'repeat_after10_min': repeatAfter10Min,
@@ -765,7 +725,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     Value<String>? drugName,
     Value<String>? drugDosage,
     Value<String>? doseAmount,
-    Value<String>? doseUnit,
     Value<TakingFrequency>? takingFrequency,
     Value<List<String>>? reminderTimes,
     Value<bool>? repeatAfter10Min,
@@ -782,7 +741,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
       drugName: drugName ?? this.drugName,
       drugDosage: drugDosage ?? this.drugDosage,
       doseAmount: doseAmount ?? this.doseAmount,
-      doseUnit: doseUnit ?? this.doseUnit,
       takingFrequency: takingFrequency ?? this.takingFrequency,
       reminderTimes: reminderTimes ?? this.reminderTimes,
       repeatAfter10Min: repeatAfter10Min ?? this.repeatAfter10Min,
@@ -810,9 +768,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     }
     if (doseAmount.present) {
       map['dose_amount'] = Variable<String>(doseAmount.value);
-    }
-    if (doseUnit.present) {
-      map['dose_unit'] = Variable<String>(doseUnit.value);
     }
     if (takingFrequency.present) {
       map['taking_frequency'] = Variable<String>(
@@ -858,7 +813,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
           ..write('drugName: $drugName, ')
           ..write('drugDosage: $drugDosage, ')
           ..write('doseAmount: $doseAmount, ')
-          ..write('doseUnit: $doseUnit, ')
           ..write('takingFrequency: $takingFrequency, ')
           ..write('reminderTimes: $reminderTimes, ')
           ..write('repeatAfter10Min: $repeatAfter10Min, ')
@@ -1263,7 +1217,6 @@ typedef $$TherapiesTableCreateCompanionBuilder =
       required String drugName,
       required String drugDosage,
       Value<String> doseAmount,
-      Value<String> doseUnit,
       required TakingFrequency takingFrequency,
       required List<String> reminderTimes,
       required bool repeatAfter10Min,
@@ -1281,7 +1234,6 @@ typedef $$TherapiesTableUpdateCompanionBuilder =
       Value<String> drugName,
       Value<String> drugDosage,
       Value<String> doseAmount,
-      Value<String> doseUnit,
       Value<TakingFrequency> takingFrequency,
       Value<List<String>> reminderTimes,
       Value<bool> repeatAfter10Min,
@@ -1346,11 +1298,6 @@ class $$TherapiesTableFilterComposer
 
   ColumnFilters<String> get doseAmount => $composableBuilder(
     column: $table.doseAmount,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get doseUnit => $composableBuilder(
-    column: $table.doseUnit,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1461,11 +1408,6 @@ class $$TherapiesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get doseUnit => $composableBuilder(
-    column: $table.doseUnit,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get takingFrequency => $composableBuilder(
     column: $table.takingFrequency,
     builder: (column) => ColumnOrderings(column),
@@ -1541,9 +1483,6 @@ class $$TherapiesTableAnnotationComposer
     column: $table.doseAmount,
     builder: (column) => column,
   );
-
-  GeneratedColumn<String> get doseUnit =>
-      $composableBuilder(column: $table.doseUnit, builder: (column) => column);
 
   GeneratedColumnWithTypeConverter<TakingFrequency, String>
   get takingFrequency => $composableBuilder(
@@ -1647,7 +1586,6 @@ class $$TherapiesTableTableManager
                 Value<String> drugName = const Value.absent(),
                 Value<String> drugDosage = const Value.absent(),
                 Value<String> doseAmount = const Value.absent(),
-                Value<String> doseUnit = const Value.absent(),
                 Value<TakingFrequency> takingFrequency = const Value.absent(),
                 Value<List<String>> reminderTimes = const Value.absent(),
                 Value<bool> repeatAfter10Min = const Value.absent(),
@@ -1663,7 +1601,6 @@ class $$TherapiesTableTableManager
                 drugName: drugName,
                 drugDosage: drugDosage,
                 doseAmount: doseAmount,
-                doseUnit: doseUnit,
                 takingFrequency: takingFrequency,
                 reminderTimes: reminderTimes,
                 repeatAfter10Min: repeatAfter10Min,
@@ -1681,7 +1618,6 @@ class $$TherapiesTableTableManager
                 required String drugName,
                 required String drugDosage,
                 Value<String> doseAmount = const Value.absent(),
-                Value<String> doseUnit = const Value.absent(),
                 required TakingFrequency takingFrequency,
                 required List<String> reminderTimes,
                 required bool repeatAfter10Min,
@@ -1697,7 +1633,6 @@ class $$TherapiesTableTableManager
                 drugName: drugName,
                 drugDosage: drugDosage,
                 doseAmount: doseAmount,
-                doseUnit: doseUnit,
                 takingFrequency: takingFrequency,
                 reminderTimes: reminderTimes,
                 repeatAfter10Min: repeatAfter10Min,

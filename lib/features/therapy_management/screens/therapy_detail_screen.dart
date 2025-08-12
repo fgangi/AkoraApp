@@ -52,7 +52,6 @@ class TherapyDetailScreen extends StatelessWidget {
         middle: Text(therapy.drugName),
         previousPageTitle: 'Terapie',
 
-        // --- UPDATED EDIT BUTTON ---
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () {
@@ -115,8 +114,13 @@ class TherapyDetailScreen extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FaIcon(icon, color: CupertinoColors.secondaryLabel, size: 22),
-          const SizedBox(width: 20),
+          SizedBox(
+            width: 35, // Adjust this width as needed
+            child: Center(
+              child: FaIcon(icon, color: CupertinoColors.secondaryLabel, size: 22),
+            ),
+          ),
+          const SizedBox(width: 16), // Adjust spacing if needed
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
