@@ -173,7 +173,7 @@ class _TherapyCardState extends State<TherapyCard> {
                           borderRadius: BorderRadius.circular(8.0),
                         ),
                         child: Text(
-                          '${widget.therapy.doseAmount} ${int.tryParse(widget.therapy.doseAmount) == 1 ? "Dose" : "Dosi"}',
+                          '${widget.therapy.doseAmount} ${int.tryParse(widget.therapy.doseAmount) == 1 ? "dose" : "dosi"}',
                           style: TextStyle(
                             color: theme.primaryColor,
                             fontWeight: FontWeight.bold,

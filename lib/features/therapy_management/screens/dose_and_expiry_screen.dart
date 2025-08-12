@@ -109,7 +109,7 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
                   if (_doseAmount > 1) setState(() => _doseAmount--);
                 },
                 onIncrement: () => setState(() => _doseAmount++),
-                label: _doseAmount == 1 ? 'Dose' : 'Dosi',
+                label: _doseAmount == 1 ? 'dose' : 'dosi',
               ),
               const SizedBox(height: 40),
 
@@ -122,7 +122,7 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
                   if (_initialDoses > 1) setState(() => _initialDoses--);
                 },
                 onIncrement: () => setState(() => _initialDoses++),
-                label: _initialDoses == 1 ? 'Dose' : 'Dosi',
+                label: _initialDoses == 1 ? 'dose' : 'dosi',
               ),
               const SizedBox(height: 40),
 
@@ -135,7 +135,7 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
                   if (_remainingDosesThreshold > 1) setState(() => _remainingDosesThreshold--);
                 },
                 onIncrement: () => setState(() => _remainingDosesThreshold++),
-                label: _remainingDosesThreshold == 1 ? 'Dose' : 'Dosi',
+                label: _remainingDosesThreshold == 1 ? 'dose' : 'dosi',
               ),
               const SizedBox(height: 40),
 

@@ -50,5 +50,30 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Questa app ha bisogno di accedere alla tua posizione per mostrarti le farmacie vicine sulla mappa.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Questa app ha bisogno di accedere alla tua posizione per mostrarti le farmacie vicine sulla mappa.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Questa app ha bisogno di accedere alla tua posizione per mostrarti le farmacie vicine sulla mappa.</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>comgooglemaps</string>
+		<string>baidumap</string>
+		<string>gaode</string>
+		<string>tencentmaps</string>
+		<string>here- आम्ही</string>
+		<string>here-route</string>
+		<string>waze</string>
+		<string>yandexmaps</string>
+		<string>yandexnavi</string>
+		<string>citymapper</string>
+		<string>mapswithme</string>
+		<string>osmand</string>
+		<string>osmandplus</string>
+		<string>doublegis</string>
+		<string>mapsme</string>
+		<string>apple-maps</string>
+	</array>
 </dict>
 </plist>
