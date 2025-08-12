@@ -64,6 +64,9 @@ dependencies:
   map_launcher: ^3.5.0
   connectivity_plus: ^6.1.5
 
+  dash_chat_2: ^0.0.21
+  dart_openai: ^5.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -80,6 +83,9 @@ dev_dependencies:
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
+
+dependency_overrides: 
+  intl: ^0.20.2
 
 # The following section is specific to Flutter packages.
 flutter:
