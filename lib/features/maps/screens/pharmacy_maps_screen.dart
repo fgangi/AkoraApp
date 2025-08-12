@@ -9,7 +9,6 @@ import 'package:latlong2/latlong.dart' as latlng;
 import 'package:map_launcher/map_launcher.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_map_compass/flutter_map_compass.dart';
 
 class PharmacyMapsScreen extends StatefulWidget {
   const PharmacyMapsScreen({super.key});
@@ -318,17 +317,14 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
                       initialCenter: _currentPosition ?? const latlng.LatLng(41.9028, 12.4964),
                       initialZoom: _currentPosition == null ? 6.0 : 14.0,
                       interactionOptions: const InteractionOptions(
-                        // We set a threshold for rotation.
-                        rotationThreshold: 20.0, // degrees
+                        // This allows all interactions (pan, zoom) EXCEPT the two-finger rotate gesture.
+                        flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                       ),
                     ),
                     children: [
                       TileLayer(
                         urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.example.akoraApp',
-                      ),
-                      const MapCompass.cupertino(
-                        hideIfRotatedNorth: true,
                       ),
                       MarkerLayer(
                         markers: _pharmacies.map((pharmacy) {
