@@ -1,6 +1,4 @@
-import 'package:akora_app/data/models/drug_model.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
-import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart';
 
 // Import all screens
@@ -14,11 +12,10 @@ import 'package:akora_app/features/therapy_management/screens/therapy_summary_sc
 import 'package:akora_app/features/therapy_management/screens/therapy_detail_screen.dart';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show TimeOfDay; // Required for TimeOfDay
 import 'package:go_router/go_router.dart';
 
 class AppRouter {
-  // --- Route names (no changes) ---
+  // Route names for the existing, functional parts of the app.
   static const String homeRouteName = 'home';
   static const String addTherapyStartRouteName = 'addTherapyStart';
   static const String therapyFrequencyRouteName = 'therapyFrequency';
@@ -27,7 +24,7 @@ class AppRouter {
   static const String doseAndExpiryRouteName = 'doseAndExpiry';
   static const String therapySummaryRouteName = 'therapySummary';
   static const String therapyDetailRouteName = 'therapyDetail';
-  static const String tutorialRouteName = 'tutorial';
+  // Removed tutorialRouteName
 
   static final GoRouter router = GoRouter(
     initialLocation: '/${homeRouteName}',
@@ -39,7 +36,7 @@ class AppRouter {
         builder: (context, state) => const MainScaffoldScreen(),
       ),
 
-      // --- The "Add/Edit Therapy" flow ---
+      // --- The Unified "Add/Edit Therapy" flow ---
       GoRoute(
         path: '/${addTherapyStartRouteName}',
         name: addTherapyStartRouteName,
@@ -52,7 +49,6 @@ class AppRouter {
         path: '/${therapyFrequencyRouteName}',
         name: therapyFrequencyRouteName,
         builder: (BuildContext context, GoRouterState state) {
-          // It ALWAYS expects TherapySetupData now. The cast error will be gone.
           final TherapySetupData data = state.extra as TherapySetupData;
           return TherapyFrequencyScreen(initialData: data);
         },
@@ -85,13 +81,9 @@ class AppRouter {
         path: '/${therapySummaryRouteName}',
         name: therapySummaryRouteName,
         builder: (BuildContext context, GoRouterState state) {
-          // In the "Create" flow, it receives TherapySetupData.
-          // In the "Edit from Detail" flow, it receives a Therapy object.
-          if (state.extra is TherapySetupData) {
-            return TherapySummaryScreen(setupData: state.extra as TherapySetupData);
-          } else {
-            return TherapySummaryScreen(initialTherapy: state.extra as Therapy);
-          }
+          // This route is the end of the setup flow, so it always receives TherapySetupData.
+          final TherapySetupData data = state.extra as TherapySetupData;
+          return TherapySummaryScreen(setupData: data);
         },
       ),
 
@@ -105,15 +97,6 @@ class AppRouter {
         },
       ),
       
-      // --- Placeholder Tutorial Route ---
-      GoRoute(
-        path: '/${tutorialRouteName}',
-        name: tutorialRouteName,
-        builder: (context, state) => const CupertinoPageScaffold(
-          navigationBar: CupertinoNavigationBar(middle: Text('Tutorial')),
-          child: Center(child: Text('App Tutorial Screen - Placeholder')),
-        ),
-      ),
     ],
     // --- Error Handler ---
     errorBuilder: (context, state) => CupertinoPageScaffold(

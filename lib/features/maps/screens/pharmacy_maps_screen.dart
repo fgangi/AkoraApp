@@ -9,6 +9,7 @@ import 'package:latlong2/latlong.dart' as latlng;
 import 'package:map_launcher/map_launcher.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map_compass/flutter_map_compass.dart';
 
 class PharmacyMapsScreen extends StatefulWidget {
   const PharmacyMapsScreen({super.key});
@@ -22,6 +23,7 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<String> _suggestions = []; // To hold the autocomplete results
   Timer? _debounce; // The debouncer timer
+  bool _isGeocoding = false;
   latlng.LatLng? _currentPosition;
   String _statusMessage = 'Accesso alla posizione...';
   List<Pharmacy> _pharmacies = [];
@@ -157,8 +159,13 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
   }
 
   void _onSearchChanged() {
+    // If we are currently geocoding an address the user just tapped,
+    // do not trigger a new autocomplete search.
+    if (_isGeocoding) return;
+
     // If a timer is already active, cancel it
     if (_debounce?.isActive ?? false) _debounce!.cancel();
+
     // Start a new timer. The API call will only happen if the user
     // stops typing for 500 milliseconds.
     _debounce = Timer(const Duration(milliseconds: 500), () {
@@ -190,8 +197,11 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
   }
 
   Future<void> _geocodeAndSearchAddress(String address) async {
-    // Hide the keyboard to show the map and loading indicator clearly.
+    // Hide the keyboard
     SystemChannels.textInput.invokeMethod('TextInput.hide');
+    // Unfocus the search text field to prevent it from re-triggering listeners
+    FocusScope.of(context).unfocus();
+
     if (address.trim().isEmpty) return;
 
     // Update the UI to show that we are searching for the address.
@@ -200,6 +210,7 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
         _statusMessage = 'Cerco "$address"...';
         _isLoadingPharmacies = true;
         _suggestions = []; // Clear and hide the suggestion list
+        _isGeocoding = true; // Set the flag to prevent new searches
       });
     }
 
@@ -244,7 +255,12 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
     } finally {
       // This block always runs, ensuring the loading spinner is turned off
       // whether the search succeeds or fails.
-      if (mounted) setState(() => _isLoadingPharmacies = false);
+      if (mounted) {
+        setState(() {
+          _isLoadingPharmacies = false;
+          _isGeocoding = false;
+        });
+      }
     }
   }
   
@@ -301,11 +317,18 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
                     options: MapOptions(
                       initialCenter: _currentPosition ?? const latlng.LatLng(41.9028, 12.4964),
                       initialZoom: _currentPosition == null ? 6.0 : 14.0,
+                      interactionOptions: const InteractionOptions(
+                        // We set a threshold for rotation.
+                        rotationThreshold: 20.0, // degrees
+                      ),
                     ),
                     children: [
                       TileLayer(
                         urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.example.akoraApp',
+                      ),
+                      const MapCompass.cupertino(
+                        hideIfRotatedNorth: true,
                       ),
                       MarkerLayer(
                         markers: _pharmacies.map((pharmacy) {
@@ -401,7 +424,12 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
                             return CupertinoListTile(
                               title: Text(suggestion, maxLines: 2, overflow: TextOverflow.ellipsis),
                               onTap: () {
+                                // We update the controller's text WITHOUT triggering the listener.
+                                _searchController.removeListener(_onSearchChanged);
                                 _searchController.text = suggestion;
+                                _searchController.addListener(_onSearchChanged);
+                                
+                                // Now we call the geocode function.
                                 _geocodeAndSearchAddress(suggestion);
                               },
                             );
@@ -440,9 +468,7 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
           CupertinoSearchTextField(
             controller: _searchController,
             placeholder: 'Cerca un indirizzo o una città',
-            onSubmitted: (value) {
-              _geocodeAndSearchAddress(value);
-            },
+            onSubmitted: (value) => _geocodeAndSearchAddress(value),
           ),
         ],
       ),

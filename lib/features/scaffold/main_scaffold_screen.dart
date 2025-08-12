@@ -38,8 +38,8 @@ class MainScaffoldScreen extends StatelessWidget {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.map_pin_ellipse),
-            label: 'Mappe',
+            icon: Icon(CupertinoIcons.map),
+            label: 'Trova Farmacie',
           ),
         ],
       ),
