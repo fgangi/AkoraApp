@@ -6,7 +6,6 @@ import 'package:akora_app/features/therapy_management/models/therapy_setup_model
 import 'package:akora_app/main.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -45,8 +44,6 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
         return 'Due volte al giorno ($timesString)';
       case TakingFrequency.onceWeekly:
         return 'Una volta a settimana alle $timesString';
-      case TakingFrequency.other:
-        return 'Frequenza personalizzata';
     }
   }
 
@@ -66,12 +63,10 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
       if (currentData.initialTherapy != null) {
         // --- UPDATE LOGIC ---
         print('--- UPDATING THERAPY ID: ${currentData.initialTherapy!.id} ---');
-        await NotificationService().cancelTherapyNotifications(currentData.initialTherapy!);
         
         final updatedTherapy = currentData.initialTherapy!.copyWith(
           takingFrequency: currentData.selectedFrequency,
           reminderTimes: currentData.reminderTimes,
-          repeatAfter10Min: currentData.repeatAfter10Min,
           startDate: currentData.startDate,
           endDate: currentData.endDate,
           doseThreshold: currentData.doseThreshold,
@@ -107,7 +102,6 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
           drugDosage: Value(currentData.currentDrug.dosage),
           takingFrequency: Value(currentData.selectedFrequency),
           reminderTimes: Value(currentData.reminderTimes),
-          repeatAfter10Min: Value(currentData.repeatAfter10Min),
           startDate: Value(currentData.startDate),
           endDate: Value(currentData.endDate),
           doseThreshold: Value(currentData.doseThreshold),

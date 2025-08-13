@@ -2,9 +2,6 @@
 import 'package:akora_app/data/models/drug_model.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
-// TimeOfDay is no longer needed here, but we'll leave the import for now
-// as other screens might still be using it temporarily during the refactor.
-import 'package:flutter/material.dart' show TimeOfDay;
 
 class TherapySetupData {
   Drug currentDrug;
@@ -12,7 +9,6 @@ class TherapySetupData {
   
   List<String> reminderTimes; // e.g., ["08:30", "20:00"]
   
-  bool repeatAfter10Min;
   DateTime startDate;
   DateTime endDate;
   int doseThreshold;
@@ -26,7 +22,6 @@ class TherapySetupData {
     required this.currentDrug,
     required this.selectedFrequency,
     required this.reminderTimes,
-    required this.repeatAfter10Min,
     required this.startDate,
     required this.endDate,
     required this.doseThreshold,
@@ -50,7 +45,6 @@ class TherapySetupData {
       ),
       selectedFrequency: therapy.takingFrequency,
       reminderTimes: therapy.reminderTimes,
-      repeatAfter10Min: therapy.repeatAfter10Min,
       startDate: therapy.startDate,
       endDate: therapy.endDate,
       doseThreshold: therapy.doseThreshold,

@@ -6,7 +6,6 @@ import 'package:akora_app/features/therapy_management/models/therapy_enums.dart'
 import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show TimeOfDay; // Kept for default TimeOfDay
 import 'package:go_router/go_router.dart';
 
 class DrugSearchScreen extends StatefulWidget {
@@ -49,7 +48,6 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
       selectedFrequency: TakingFrequency.onceDaily,
       // Use the new reminderTimes list property
       reminderTimes: const ['08:30'], // Sensible default for once a day
-      repeatAfter10Min: false,
       startDate: DateTime.now(),
       endDate: DateTime.now().add(const Duration(days: 7)),
       doseThreshold: 10,

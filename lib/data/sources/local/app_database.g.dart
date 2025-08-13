@@ -74,20 +74,6 @@ class $TherapiesTable extends Therapies
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   ).withConverter<List<String>>($TherapiesTable.$converterreminderTimes);
-  static const VerificationMeta _repeatAfter10MinMeta = const VerificationMeta(
-    'repeatAfter10Min',
-  );
-  @override
-  late final GeneratedColumn<bool> repeatAfter10Min = GeneratedColumn<bool>(
-    'repeat_after10_min',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("repeat_after10_min" IN (0, 1))',
-    ),
-  );
   static const VerificationMeta _startDateMeta = const VerificationMeta(
     'startDate',
   );
@@ -181,7 +167,6 @@ class $TherapiesTable extends Therapies
     doseAmount,
     takingFrequency,
     reminderTimes,
-    repeatAfter10Min,
     startDate,
     endDate,
     doseThreshold,
@@ -226,17 +211,6 @@ class $TherapiesTable extends Therapies
         _doseAmountMeta,
         doseAmount.isAcceptableOrUnknown(data['dose_amount']!, _doseAmountMeta),
       );
-    }
-    if (data.containsKey('repeat_after10_min')) {
-      context.handle(
-        _repeatAfter10MinMeta,
-        repeatAfter10Min.isAcceptableOrUnknown(
-          data['repeat_after10_min']!,
-          _repeatAfter10MinMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_repeatAfter10MinMeta);
     }
     if (data.containsKey('start_date')) {
       context.handle(
@@ -329,10 +303,6 @@ class $TherapiesTable extends Therapies
           data['${effectivePrefix}reminder_times'],
         )!,
       ),
-      repeatAfter10Min: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}repeat_after10_min'],
-      )!,
       startDate: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}start_date'],
@@ -382,7 +352,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
   final String doseAmount;
   final TakingFrequency takingFrequency;
   final List<String> reminderTimes;
-  final bool repeatAfter10Min;
   final DateTime startDate;
   final DateTime endDate;
   final int doseThreshold;
@@ -397,7 +366,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     required this.doseAmount,
     required this.takingFrequency,
     required this.reminderTimes,
-    required this.repeatAfter10Min,
     required this.startDate,
     required this.endDate,
     required this.doseThreshold,
@@ -423,7 +391,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
         $TherapiesTable.$converterreminderTimes.toSql(reminderTimes),
       );
     }
-    map['repeat_after10_min'] = Variable<bool>(repeatAfter10Min);
     map['start_date'] = Variable<DateTime>(startDate);
     map['end_date'] = Variable<DateTime>(endDate);
     map['dose_threshold'] = Variable<int>(doseThreshold);
@@ -446,7 +413,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       doseAmount: Value(doseAmount),
       takingFrequency: Value(takingFrequency),
       reminderTimes: Value(reminderTimes),
-      repeatAfter10Min: Value(repeatAfter10Min),
       startDate: Value(startDate),
       endDate: Value(endDate),
       doseThreshold: Value(doseThreshold),
@@ -475,7 +441,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
         json['takingFrequency'],
       ),
       reminderTimes: serializer.fromJson<List<String>>(json['reminderTimes']),
-      repeatAfter10Min: serializer.fromJson<bool>(json['repeatAfter10Min']),
       startDate: serializer.fromJson<DateTime>(json['startDate']),
       endDate: serializer.fromJson<DateTime>(json['endDate']),
       doseThreshold: serializer.fromJson<int>(json['doseThreshold']),
@@ -495,7 +460,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       'doseAmount': serializer.toJson<String>(doseAmount),
       'takingFrequency': serializer.toJson<TakingFrequency>(takingFrequency),
       'reminderTimes': serializer.toJson<List<String>>(reminderTimes),
-      'repeatAfter10Min': serializer.toJson<bool>(repeatAfter10Min),
       'startDate': serializer.toJson<DateTime>(startDate),
       'endDate': serializer.toJson<DateTime>(endDate),
       'doseThreshold': serializer.toJson<int>(doseThreshold),
@@ -513,7 +477,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     String? doseAmount,
     TakingFrequency? takingFrequency,
     List<String>? reminderTimes,
-    bool? repeatAfter10Min,
     DateTime? startDate,
     DateTime? endDate,
     int? doseThreshold,
@@ -528,7 +491,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     doseAmount: doseAmount ?? this.doseAmount,
     takingFrequency: takingFrequency ?? this.takingFrequency,
     reminderTimes: reminderTimes ?? this.reminderTimes,
-    repeatAfter10Min: repeatAfter10Min ?? this.repeatAfter10Min,
     startDate: startDate ?? this.startDate,
     endDate: endDate ?? this.endDate,
     doseThreshold: doseThreshold ?? this.doseThreshold,
@@ -555,9 +517,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
       reminderTimes: data.reminderTimes.present
           ? data.reminderTimes.value
           : this.reminderTimes,
-      repeatAfter10Min: data.repeatAfter10Min.present
-          ? data.repeatAfter10Min.value
-          : this.repeatAfter10Min,
       startDate: data.startDate.present ? data.startDate.value : this.startDate,
       endDate: data.endDate.present ? data.endDate.value : this.endDate,
       doseThreshold: data.doseThreshold.present
@@ -583,7 +542,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
           ..write('doseAmount: $doseAmount, ')
           ..write('takingFrequency: $takingFrequency, ')
           ..write('reminderTimes: $reminderTimes, ')
-          ..write('repeatAfter10Min: $repeatAfter10Min, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
           ..write('doseThreshold: $doseThreshold, ')
@@ -603,7 +561,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
     doseAmount,
     takingFrequency,
     reminderTimes,
-    repeatAfter10Min,
     startDate,
     endDate,
     doseThreshold,
@@ -622,7 +579,6 @@ class Therapy extends DataClass implements Insertable<Therapy> {
           other.doseAmount == this.doseAmount &&
           other.takingFrequency == this.takingFrequency &&
           other.reminderTimes == this.reminderTimes &&
-          other.repeatAfter10Min == this.repeatAfter10Min &&
           other.startDate == this.startDate &&
           other.endDate == this.endDate &&
           other.doseThreshold == this.doseThreshold &&
@@ -639,7 +595,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
   final Value<String> doseAmount;
   final Value<TakingFrequency> takingFrequency;
   final Value<List<String>> reminderTimes;
-  final Value<bool> repeatAfter10Min;
   final Value<DateTime> startDate;
   final Value<DateTime> endDate;
   final Value<int> doseThreshold;
@@ -654,7 +609,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     this.doseAmount = const Value.absent(),
     this.takingFrequency = const Value.absent(),
     this.reminderTimes = const Value.absent(),
-    this.repeatAfter10Min = const Value.absent(),
     this.startDate = const Value.absent(),
     this.endDate = const Value.absent(),
     this.doseThreshold = const Value.absent(),
@@ -670,7 +624,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     this.doseAmount = const Value.absent(),
     required TakingFrequency takingFrequency,
     required List<String> reminderTimes,
-    required bool repeatAfter10Min,
     required DateTime startDate,
     required DateTime endDate,
     required int doseThreshold,
@@ -682,7 +635,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
        drugDosage = Value(drugDosage),
        takingFrequency = Value(takingFrequency),
        reminderTimes = Value(reminderTimes),
-       repeatAfter10Min = Value(repeatAfter10Min),
        startDate = Value(startDate),
        endDate = Value(endDate),
        doseThreshold = Value(doseThreshold);
@@ -693,7 +645,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     Expression<String>? doseAmount,
     Expression<String>? takingFrequency,
     Expression<String>? reminderTimes,
-    Expression<bool>? repeatAfter10Min,
     Expression<DateTime>? startDate,
     Expression<DateTime>? endDate,
     Expression<int>? doseThreshold,
@@ -709,7 +660,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
       if (doseAmount != null) 'dose_amount': doseAmount,
       if (takingFrequency != null) 'taking_frequency': takingFrequency,
       if (reminderTimes != null) 'reminder_times': reminderTimes,
-      if (repeatAfter10Min != null) 'repeat_after10_min': repeatAfter10Min,
       if (startDate != null) 'start_date': startDate,
       if (endDate != null) 'end_date': endDate,
       if (doseThreshold != null) 'dose_threshold': doseThreshold,
@@ -727,7 +677,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
     Value<String>? doseAmount,
     Value<TakingFrequency>? takingFrequency,
     Value<List<String>>? reminderTimes,
-    Value<bool>? repeatAfter10Min,
     Value<DateTime>? startDate,
     Value<DateTime>? endDate,
     Value<int>? doseThreshold,
@@ -743,7 +692,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
       doseAmount: doseAmount ?? this.doseAmount,
       takingFrequency: takingFrequency ?? this.takingFrequency,
       reminderTimes: reminderTimes ?? this.reminderTimes,
-      repeatAfter10Min: repeatAfter10Min ?? this.repeatAfter10Min,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       doseThreshold: doseThreshold ?? this.doseThreshold,
@@ -779,9 +727,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
         $TherapiesTable.$converterreminderTimes.toSql(reminderTimes.value),
       );
     }
-    if (repeatAfter10Min.present) {
-      map['repeat_after10_min'] = Variable<bool>(repeatAfter10Min.value);
-    }
     if (startDate.present) {
       map['start_date'] = Variable<DateTime>(startDate.value);
     }
@@ -815,7 +760,6 @@ class TherapiesCompanion extends UpdateCompanion<Therapy> {
           ..write('doseAmount: $doseAmount, ')
           ..write('takingFrequency: $takingFrequency, ')
           ..write('reminderTimes: $reminderTimes, ')
-          ..write('repeatAfter10Min: $repeatAfter10Min, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
           ..write('doseThreshold: $doseThreshold, ')
@@ -1219,7 +1163,6 @@ typedef $$TherapiesTableCreateCompanionBuilder =
       Value<String> doseAmount,
       required TakingFrequency takingFrequency,
       required List<String> reminderTimes,
-      required bool repeatAfter10Min,
       required DateTime startDate,
       required DateTime endDate,
       required int doseThreshold,
@@ -1236,7 +1179,6 @@ typedef $$TherapiesTableUpdateCompanionBuilder =
       Value<String> doseAmount,
       Value<TakingFrequency> takingFrequency,
       Value<List<String>> reminderTimes,
-      Value<bool> repeatAfter10Min,
       Value<DateTime> startDate,
       Value<DateTime> endDate,
       Value<int> doseThreshold,
@@ -1311,11 +1253,6 @@ class $$TherapiesTableFilterComposer
   get reminderTimes => $composableBuilder(
     column: $table.reminderTimes,
     builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
-
-  ColumnFilters<bool> get repeatAfter10Min => $composableBuilder(
-    column: $table.repeatAfter10Min,
-    builder: (column) => ColumnFilters(column),
   );
 
   ColumnFilters<DateTime> get startDate => $composableBuilder(
@@ -1418,11 +1355,6 @@ class $$TherapiesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get repeatAfter10Min => $composableBuilder(
-    column: $table.repeatAfter10Min,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<DateTime> get startDate => $composableBuilder(
     column: $table.startDate,
     builder: (column) => ColumnOrderings(column),
@@ -1495,11 +1427,6 @@ class $$TherapiesTableAnnotationComposer
         column: $table.reminderTimes,
         builder: (column) => column,
       );
-
-  GeneratedColumn<bool> get repeatAfter10Min => $composableBuilder(
-    column: $table.repeatAfter10Min,
-    builder: (column) => column,
-  );
 
   GeneratedColumn<DateTime> get startDate =>
       $composableBuilder(column: $table.startDate, builder: (column) => column);
@@ -1588,7 +1515,6 @@ class $$TherapiesTableTableManager
                 Value<String> doseAmount = const Value.absent(),
                 Value<TakingFrequency> takingFrequency = const Value.absent(),
                 Value<List<String>> reminderTimes = const Value.absent(),
-                Value<bool> repeatAfter10Min = const Value.absent(),
                 Value<DateTime> startDate = const Value.absent(),
                 Value<DateTime> endDate = const Value.absent(),
                 Value<int> doseThreshold = const Value.absent(),
@@ -1603,7 +1529,6 @@ class $$TherapiesTableTableManager
                 doseAmount: doseAmount,
                 takingFrequency: takingFrequency,
                 reminderTimes: reminderTimes,
-                repeatAfter10Min: repeatAfter10Min,
                 startDate: startDate,
                 endDate: endDate,
                 doseThreshold: doseThreshold,
@@ -1620,7 +1545,6 @@ class $$TherapiesTableTableManager
                 Value<String> doseAmount = const Value.absent(),
                 required TakingFrequency takingFrequency,
                 required List<String> reminderTimes,
-                required bool repeatAfter10Min,
                 required DateTime startDate,
                 required DateTime endDate,
                 required int doseThreshold,
@@ -1635,7 +1559,6 @@ class $$TherapiesTableTableManager
                 doseAmount: doseAmount,
                 takingFrequency: takingFrequency,
                 reminderTimes: reminderTimes,
-                repeatAfter10Min: repeatAfter10Min,
                 startDate: startDate,
                 endDate: endDate,
                 doseThreshold: doseThreshold,

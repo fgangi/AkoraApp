@@ -17,7 +17,6 @@ class Therapies extends Table {
   TextColumn get doseAmount => text().withDefault(const Constant('1'))();
   TextColumn get takingFrequency => text().map(const TakingFrequencyConverter())();
   TextColumn get reminderTimes => text().map(const ReminderTimesConverter())();
-  BoolColumn get repeatAfter10Min => boolean()();
   DateTimeColumn get startDate => dateTime()();
   DateTimeColumn get endDate => dateTime()();
   IntColumn get doseThreshold => integer()();
@@ -62,7 +61,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   Future<int> createTherapy(TherapiesCompanion entry) {
     return into(therapies).insert(entry);
@@ -90,6 +89,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> logDoseTaken({
     required int therapyId,
     required DateTime scheduledTime,
+    required int amount,
   }) async {
     final entry = MedicationLogsCompanion.insert(
       therapyId: therapyId,
@@ -98,17 +98,21 @@ class AppDatabase extends _$AppDatabase {
       status: 'taken',
     );
     await into(medicationLogs).insert(entry);
-    await _decrementDosesRemaining(therapyId);
+    // Pass the amount to the decrement helper
+    await _decrementDosesRemaining(therapyId, amount: amount);
   }
+
   
-  Future<void> _decrementDosesRemaining(int therapyId) async {
+  Future<void> _decrementDosesRemaining(int therapyId, {int amount = 1}) async {
     final statement = update(therapies)..where((t) => t.id.equals(therapyId));
     await statement.write(
       TherapiesCompanion.custom(
-        dosesRemaining: therapies.dosesRemaining - const Constant(1),
+        // Use the passed amount instead of a hardcoded 1
+        dosesRemaining: therapies.dosesRemaining - Constant(amount),
       ),
     );
   }
+
 
   // Renamed for clarity and updated return type.
   Stream<List<MedicationLog>> watchDoseLogsForDay({
@@ -128,19 +132,21 @@ class AppDatabase extends _$AppDatabase {
   Future<void> removeDoseLog({
     required int therapyId,
     required DateTime scheduledTime,
+    required int amount,
   }) async {
     await (delete(medicationLogs)
           ..where((log) => log.therapyId.equals(therapyId))
           ..where((log) => log.scheduledDoseTime.equals(scheduledTime)))
         .go();
-    await _incrementDosesRemaining(therapyId);
+    // Pass the amount to the increment helper
+    await _incrementDosesRemaining(therapyId, amount: amount);
   }
 
-  Future<void> _incrementDosesRemaining(int therapyId) async {
+  Future<void> _incrementDosesRemaining(int therapyId, {int amount = 1}) async {
     final statement = update(therapies)..where((t) => t.id.equals(therapyId));
     await statement.write(
       TherapiesCompanion.custom(
-        dosesRemaining: therapies.dosesRemaining + const Constant(1),
+        dosesRemaining: therapies.dosesRemaining + Constant(amount),
       ),
     );
   }
