@@ -418,11 +418,13 @@ class MockAppDatabase extends _i1.Mock implements _i2.AppDatabase {
   _i5.Future<void> logDoseTaken({
     required int? therapyId,
     required DateTime? scheduledTime,
+    required int? amount,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#logDoseTaken, [], {
               #therapyId: therapyId,
               #scheduledTime: scheduledTime,
+              #amount: amount,
             }),
             returnValue: _i5.Future<void>.value(),
             returnValueForMissingStub: _i5.Future<void>.value(),
@@ -447,11 +449,13 @@ class MockAppDatabase extends _i1.Mock implements _i2.AppDatabase {
   _i5.Future<void> removeDoseLog({
     required int? therapyId,
     required DateTime? scheduledTime,
+    required int? amount,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#removeDoseLog, [], {
               #therapyId: therapyId,
               #scheduledTime: scheduledTime,
+              #amount: amount,
             }),
             returnValue: _i5.Future<void>.value(),
             returnValueForMissingStub: _i5.Future<void>.value(),
