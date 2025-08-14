@@ -11,8 +11,17 @@ import 'package:timezone/timezone.dart' as tz; // Keep timezone import for safet
 class TherapyCard extends StatefulWidget {
   final Therapy therapy;
 
-  const TherapyCard({super.key, required this.therapy});
+  //const TherapyCard({super.key, required this.therapy});
+  final AppDatabase database;
+  final NotificationService notificationService;
 
+  // Modify the constructor to require them
+  const TherapyCard({
+    super.key,
+    required this.therapy,
+    required this.database,
+    required this.notificationService,
+  });
   @override
   State<TherapyCard> createState() => _TherapyCardState();
 }
@@ -25,7 +34,7 @@ class _TherapyCardState extends State<TherapyCard> {
   void initState() {
     super.initState();
     // This query is slightly different. Instead of watchSingleOrNull, we watch a list.
-    _logsStreamForToday = db.watchDoseLogsForDay(
+    _logsStreamForToday = widget.database.watchDoseLogsForDay(
       therapyId: widget.therapy.id,
       day: DateTime.now(),
     );
@@ -63,7 +72,7 @@ class _TherapyCardState extends State<TherapyCard> {
     if (widget.therapy.dosesRemaining != null) {
       final newDoseCount = widget.therapy.dosesRemaining! - 1;
       if (newDoseCount <= widget.therapy.doseThreshold) {
-        await NotificationService().triggerLowStockNotification(
+        await widget.notificationService.triggerLowStockNotification(
           therapyId: widget.therapy.id,
           drugName: widget.therapy.drugName,
           remainingDoses: newDoseCount,
@@ -74,22 +83,22 @@ class _TherapyCardState extends State<TherapyCard> {
     final now = DateTime.now();
     final scheduledTimeForToday = DateTime(now.year, now.month, now.day, doseTime.hour, doseTime.minute);
     
-    await db.logDoseTaken(therapyId: widget.therapy.id, scheduledTime: scheduledTimeForToday);
+    await widget.database.logDoseTaken(therapyId: widget.therapy.id, scheduledTime: scheduledTimeForToday);
 
     // Cancel and reschedule is a safe way to handle notification updates
-    await NotificationService().cancelTherapyNotifications(widget.therapy);
-    await NotificationService().scheduleNotificationForTherapy(widget.therapy);
+    await widget.notificationService.cancelTherapyNotifications(widget.therapy);
+    await widget.notificationService.scheduleNotificationForTherapy(widget.therapy);
   }
 
   void _undoTaken(TimeOfDay doseTime) async {
     final now = DateTime.now();
     final scheduledTimeForToday = DateTime(now.year, now.month, now.day, doseTime.hour, doseTime.minute);
     
-    await db.removeDoseLog(therapyId: widget.therapy.id, scheduledTime: scheduledTimeForToday);
+    await widget.database.removeDoseLog(therapyId: widget.therapy.id, scheduledTime: scheduledTimeForToday);
 
     // Reschedule all notifications to bring back the undone one (if it's in the future)
-    await NotificationService().cancelTherapyNotifications(widget.therapy);
-    await NotificationService().scheduleNotificationForTherapy(widget.therapy);
+    await widget.notificationService.cancelTherapyNotifications(widget.therapy);
+    await widget.notificationService.scheduleNotificationForTherapy(widget.therapy);
   }
 
   @override

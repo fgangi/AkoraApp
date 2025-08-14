@@ -2,15 +2,24 @@ import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:akora_app/core/services/notification_service.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/home/widgets/therapy_card.dart';
-import 'package:akora_app/main.dart';
+//import 'package:akora_app/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  //const HomeScreen({super.key});
+  // Add final fields to hold the dependencies
+  final AppDatabase database;
+  final NotificationService notificationService;
 
+  // Add a new constructor that accepts and requires these dependencies
+  const HomeScreen({
+    super.key,
+    required this.database,
+    required this.notificationService,
+  });
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -26,7 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _therapiesStream = db.watchAllActiveTherapies();
+    //_therapiesStream = db.watchAllActiveTherapies();
+    _therapiesStream = widget.database.watchAllActiveTherapies();
     _startDayChangeListener();
   }
 
@@ -70,8 +80,10 @@ class _HomeScreenState extends State<HomeScreen> {
             isDestructiveAction: true,
             child: const Text('Elimina'),
             onPressed: () async {
-              await NotificationService().cancelTherapyNotifications(therapyToDelete);
-              await db.deleteTherapy(therapyToDelete.id);
+              //await NotificationService().cancelTherapyNotifications(therapyToDelete);
+              //await db.deleteTherapy(therapyToDelete.id);
+              await widget.notificationService.cancelTherapyNotifications(therapyToDelete);
+              await widget.database.deleteTherapy(therapyToDelete.id);
               if (mounted) Navigator.pop(ctx);
             },
           ),
@@ -166,7 +178,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
-                        child: TherapyCard(therapy: therapy),
+                        child: TherapyCard(
+                          therapy: therapy,
+                          database: widget.database,
+                          notificationService: widget.notificationService,
+                        ),
                       ),
                     ),
                   );
