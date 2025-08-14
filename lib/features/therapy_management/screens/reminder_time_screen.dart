@@ -13,53 +13,55 @@ class ReminderTimeScreen extends StatefulWidget {
 }
 
 class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
-  // We now manage a list of times, not a single time.
+  // We manage a LIST of times now.
   late List<DateTime> _selectedDateTimes;
-  late bool _repeatAfter10Min;
+  late int _requiredTimePickers;
 
   @override
   void initState() {
     super.initState();
-    _repeatAfter10Min = widget.initialData.repeatAfter10Min;
-
-    // Initialize the list of times from the data model.
+    // Initialize the list of times by parsing the strings from the data model.
     _selectedDateTimes = widget.initialData.reminderTimes.map((timeStr) {
       final parts = timeStr.split(':');
       return DateTime(2000, 1, 1, int.parse(parts[0]), int.parse(parts[1]));
     }).toList();
 
-    // Ensure we have the correct number of time pickers for the selected frequency.
+    // Call a helper to ensure we have the correct number of time pickers.
     _adjustTimePickerCount();
   }
 
+  // This helper function makes the screen dynamic.
   void _adjustTimePickerCount() {
-    int requiredCount = 1; // Default to 1 picker
-    if (widget.initialData.selectedFrequency == TakingFrequency.twiceDaily) {
-      requiredCount = 2;
-    } // Add more else if blocks for other frequencies like three times a day, etc.
+    switch (widget.initialData.selectedFrequency) {
+      case TakingFrequency.twiceDaily:
+        _requiredTimePickers = 2;
+        break;
+      case TakingFrequency.onceDaily:
+      case TakingFrequency.onceWeekly:
+        _requiredTimePickers = 1;
+        break;
+    }
 
-    // Add default times if we need more pickers
-    while (_selectedDateTimes.length < requiredCount) {
+    // Add default times if we need more pickers (e.g., user selected "twice daily")
+    while (_selectedDateTimes.length < _requiredTimePickers) {
       // Add a sensible default for the second dose, e.g., 20:00
       _selectedDateTimes.add(DateTime(2000, 1, 1, 20, 00));
     }
 
     // Remove extra times if the user changed from a higher to lower frequency
-    while (_selectedDateTimes.length > requiredCount) {
+    while (_selectedDateTimes.length > _requiredTimePickers) {
       _selectedDateTimes.removeLast();
     }
   }
 
   void _onConfirm() {
-    // Convert the list of DateTime back to a list of "HH:mm" strings
+    // Convert the list of DateTime objects back into a list of "HH:mm" strings
     final List<String> timeStrings = _selectedDateTimes.map((dt) {
       return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     }).toList();
     
-    // Update the data model with the new values
-    final updatedData = widget.initialData
-      ..reminderTimes = timeStrings
-      ..repeatAfter10Min = _repeatAfter10Min;
+    // Update the data model with the new list of times
+    final updatedData = widget.initialData..reminderTimes = timeStrings;
 
     if (widget.initialData.isSingleEditMode) {
       context.pop(updatedData);
@@ -82,14 +84,14 @@ class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            // Use Expanded + ListView to handle multiple scrollable time pickers
+            // The main content is now a ListView to allow scrolling if needed
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 children: [
                   const SizedBox(height: 30),
                   Text(
-                    _selectedDateTimes.length > 1
+                    _requiredTimePickers > 1
                         ? 'A CHE ORE VUOI RICEVERE I PROMEMORIA?'
                         : 'A CHE ORA VUOI RICEVERE IL PROMEMORIA?',
                     textAlign: TextAlign.center,
@@ -97,10 +99,11 @@ class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
                   ),
                   const SizedBox(height: 30),
                   
-                  // Dynamically build a time picker for each required time
+                  // This generates a widget for each time in our _selectedDateTimes list.
                   ...List.generate(_selectedDateTimes.length, (index) {
                     return Column(
                       children: [
+                        // Only show a label if there's more than one picker
                         if (_selectedDateTimes.length > 1)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 8.0),
@@ -110,22 +113,23 @@ class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
                             ),
                           ),
                         SizedBox(
-                          height: 220,
+                          height: 150, // A more compact height
                           child: CupertinoDatePicker(
                             mode: CupertinoDatePickerMode.time,
                             initialDateTime: _selectedDateTimes[index],
                             use24hFormat: true,
                             onDateTimeChanged: (DateTime newDateTime) {
                               setState(() {
+                                // Update the specific time in the list
                                 _selectedDateTimes[index] = newDateTime;
                               });
                             },
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 30),
                       ],
                     );
-                  }),                  
+                  }),
                 ],
               ),
             ),
@@ -140,19 +144,6 @@ class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildSwitchRow({required String text, required bool value, required ValueChanged<bool> onChanged}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 16))),
-          CupertinoSwitch(value: value, onChanged: onChanged),
-        ],
       ),
     );
   }

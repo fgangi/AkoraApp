@@ -15,7 +15,7 @@ class AiApiService {
   Future<String> getChatResponse(List<OpenAIChatCompletionChoiceMessageModel> messages) async {
     try {
       final chatCompletion = await OpenAI.instance.chat.create(
-        model: 'gpt-3.5-turbo', // A fast and cost-effective model
+        model: 'gpt-4o',
         messages: messages,
       );
       final content = chatCompletion.choices.first.message.content;

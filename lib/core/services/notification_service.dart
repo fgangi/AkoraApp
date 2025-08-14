@@ -66,23 +66,46 @@ class NotificationService {
   // --- CORE APP SCHEDULING ---
   Future<void> scheduleNotificationForTherapy(Therapy therapy) async {
     if (!_isInitialized) {
-      debugPrint("NotificationService not initialized.");
+      debugPrint("NotificationService not initialized. Cannot schedule.");
       return;
     }
+    
+    // --- Cancel any existing notifications for this therapy first ---
+    // This is crucial for handling updates correctly.
+    await cancelTherapyNotifications(therapy);
+    print("Cancelled old notifications for Therapy ID: ${therapy.id}");
 
-    // This logic handles all frequencies based on the data
+    // Loop through each reminder time saved for the therapy (e.g., ["08:30", "20:00"])
     for (final timeString in therapy.reminderTimes) {
       final timeParts = timeString.split(':');
       final scheduledTime = TimeOfDay(hour: int.parse(timeParts[0]), minute: int.parse(timeParts[1]));
 
-            for (int i = 0; i <= therapy.endDate.difference(therapy.startDate).inDays; i++) {
+      // Loop through each day in the therapy's duration
+      for (int i = 0; i <= therapy.endDate.difference(therapy.startDate).inDays; i++) {
         final DateTime currentDay = therapy.startDate.add(Duration(days: i));
         
-        // Add weekly check
-        if (therapy.takingFrequency == TakingFrequency.onceWeekly && currentDay.weekday != therapy.startDate.weekday) {
-          continue; // Skip days that don't match the start day for weekly therapies
+        // --- FREQUENCY LOGIC ---
+        bool shouldScheduleToday = false;
+        switch (therapy.takingFrequency) {
+          case TakingFrequency.onceDaily:
+          case TakingFrequency.twiceDaily:
+            // For daily frequencies, we schedule on every day in the range.
+            shouldScheduleToday = true;
+            break;
+          case TakingFrequency.onceWeekly:
+            // For weekly, we only schedule if the current day's weekday
+            // matches the start date's weekday.
+            if (currentDay.weekday == therapy.startDate.weekday) {
+              shouldScheduleToday = true;
+            }
+            break;
         }
 
+        if (!shouldScheduleToday) {
+          continue; // Skip to the next day if it doesn't match the frequency
+        }
+        
+        // --- The rest of the scheduling logic ---
         final tz.TZDateTime scheduledDate = tz.TZDateTime(
           tz.local,
           currentDay.year,
@@ -93,22 +116,17 @@ class NotificationService {
         );
 
         if (scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) {
-          continue;
+          continue; // Don't schedule for past times
         }
 
-        int dailyId = _generateUniqueId(therapy.id, currentDay, scheduledTime);
+        int uniqueId = _generateUniqueId(therapy.id, currentDay, scheduledTime);
         String title = 'Promemoria: ${therapy.drugName}';
-
-        // We dynamically create the "dose" or "dosi" label based on the amount.
-        final int doseAmountNum = int.tryParse(therapy.doseAmount) ?? 1;
-        final String doseLabel = doseAmountNum == 1 ? 'dose' : 'dosi';
-        String body = 'È ora di prendere ${therapy.doseAmount} $doseLabel di ${therapy.drugName} ${therapy.drugDosage}.';
-        // --- END OF CORRECTION ---
+        String body = 'È ora di prendere ${therapy.doseAmount} ${int.tryParse(therapy.doseAmount) == 1 ? "dose" : "dosi"} di ${therapy.drugName}.';
 
         await _plugin.zonedSchedule(
-          dailyId,
+          uniqueId,
           title,
-          body, // Use the corrected body string
+          body,
           scheduledDate,
           const NotificationDetails(
             android: AndroidNotificationDetails('therapy_reminders_channel_id', 'Therapy Reminders', channelDescription: 'Reminders for your medication schedule.', importance: Importance.max, priority: Priority.high),
@@ -116,7 +134,7 @@ class NotificationService {
           ),
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         );
-        debugPrint('Scheduled notification $dailyId for $scheduledDate');
+        debugPrint('Scheduled notification $uniqueId for $scheduledDate');
       }
     }
   }

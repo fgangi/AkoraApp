@@ -104,17 +104,6 @@ class _TherapyFrequencyScreenState extends State<TherapyFrequencyScreen> {
                 isSelected: _currentData.selectedFrequency == TakingFrequency.onceWeekly,
                 onTap: () => _onFrequencySelected(TakingFrequency.onceWeekly),
               ),
-              const SizedBox(height: 12),
-              _buildFrequencyButton(
-                context: context,
-                text: 'Altre opzioni...',
-                isSelected: _currentData.selectedFrequency == TakingFrequency.other,
-                onTap: () {
-                  _onFrequencySelected(TakingFrequency.other);
-                  print('Altre opzioni selected');
-                  // TODO: Implement UI for custom frequency
-                },
-              ),
               const Spacer(),
               CupertinoButton.filled(
                 onPressed: _onConfirm,

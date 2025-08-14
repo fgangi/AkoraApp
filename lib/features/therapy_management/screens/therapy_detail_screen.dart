@@ -2,7 +2,6 @@ import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -13,14 +12,13 @@ class TherapyDetailScreen extends StatelessWidget {
   const TherapyDetailScreen({super.key, required this.therapy});
 
     String _formatFrequency(BuildContext context) {
+    // Join all reminder times with a comma and space for readability.
+    final String timesString = therapy.reminderTimes.join(', ');
+    
     // Safety check: if for some reason the reminder times are empty, show a fallback message.
     if (therapy.reminderTimes.isEmpty) {
       return 'Nessun orario impostato';
     }
-
-    // Join all the saved time strings with a comma and space for readability.
-    // e.g., ["08:30", "20:00"] becomes "08:30, 20:00"
-    final String timesString = therapy.reminderTimes.join(', ');
 
     // Use a switch statement on the frequency to return the appropriate descriptive text.
     switch (therapy.takingFrequency) {
@@ -31,17 +29,7 @@ class TherapyDetailScreen extends StatelessWidget {
         return 'Due volte al giorno ($timesString)';
         
       case TakingFrequency.onceWeekly:
-        // --- THIS IS THE CORRECTED LINE ---
-        // Changed TakingFreedom to TakingFrequency
         return 'Una volta a settimana alle $timesString';
-        
-      case TakingFrequency.other:
-        return 'Frequenza personalizzata';
-        
-      // It's good practice to have a default case, although it shouldn't be reached
-      // if all enum values are handled.
-      default:
-        return 'Frequenza non specificata';
     }
   }
 
@@ -96,11 +84,6 @@ class TherapyDetailScreen extends StatelessWidget {
                 label: 'Data di Scadenza',
                 value: DateFormat('dd/MM/yyyy').format(therapy.expiryDate!),
               ),
-            _buildDetailRow(
-              icon: CupertinoIcons.repeat,
-              label: 'Opzioni Notifica',
-              value: therapy.repeatAfter10Min ? 'Ripeti dopo 10 min' : 'Nessuna opzione extra',
-            ),
           ],
         ),
       ),

@@ -33,7 +33,6 @@ void main() {
       doseAmount: '1',
       takingFrequency: TakingFrequency.onceDaily,
       reminderTimes: ['08:00'],
-      repeatAfter10Min: false,
       startDate: DateTime.now(),
       endDate: DateTime.now().add(const Duration(days: 10)),
       doseThreshold: 10,

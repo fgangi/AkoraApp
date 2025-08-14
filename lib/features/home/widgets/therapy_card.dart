@@ -6,7 +6,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'; // For TimeOfDay
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:timezone/timezone.dart' as tz; // Keep timezone import for safety
 
 class TherapyCard extends StatefulWidget {
   final Therapy therapy;
@@ -69,6 +68,10 @@ class _TherapyCardState extends State<TherapyCard> {
   }
 
   void _markAsTaken(TimeOfDay doseTime) async {
+    // Convert the dose amount string to an integer for calculations.
+    // Default to 1 if parsing fails for some reason.
+    final int amountToTake = int.tryParse(widget.therapy.doseAmount) ?? 1;
+
     if (widget.therapy.dosesRemaining != null) {
       final newDoseCount = widget.therapy.dosesRemaining! - 1;
       if (newDoseCount <= widget.therapy.doseThreshold) {
@@ -83,7 +86,12 @@ class _TherapyCardState extends State<TherapyCard> {
     final now = DateTime.now();
     final scheduledTimeForToday = DateTime(now.year, now.month, now.day, doseTime.hour, doseTime.minute);
     
-    await widget.database.logDoseTaken(therapyId: widget.therapy.id, scheduledTime: scheduledTimeForToday);
+    // Pass the actual amount to be logged.
+    await widget.database.logDoseTaken(
+      therapyId: widget.therapy.id,
+      scheduledTime: scheduledTimeForToday,
+      amount: amountToTake,
+    );
 
     // Cancel and reschedule is a safe way to handle notification updates
     await widget.notificationService.cancelTherapyNotifications(widget.therapy);
@@ -91,10 +99,18 @@ class _TherapyCardState extends State<TherapyCard> {
   }
 
   void _undoTaken(TimeOfDay doseTime) async {
+    // Convert the dose amount string to an integer.
+    final int amountToRestore = int.tryParse(widget.therapy.doseAmount) ?? 1;
+    
     final now = DateTime.now();
     final scheduledTimeForToday = DateTime(now.year, now.month, now.day, doseTime.hour, doseTime.minute);
     
-    await widget.database.removeDoseLog(therapyId: widget.therapy.id, scheduledTime: scheduledTimeForToday);
+    // Pass the actual amount to be restored.
+    await widget.database.removeDoseLog(
+      therapyId: widget.therapy.id,
+      scheduledTime: scheduledTimeForToday,
+      amount: amountToRestore, // Pass the correct amount
+    );
 
     // Reschedule all notifications to bring back the undone one (if it's in the future)
     await widget.notificationService.cancelTherapyNotifications(widget.therapy);
@@ -105,11 +121,10 @@ class _TherapyCardState extends State<TherapyCard> {
   Widget build(BuildContext context) {
     final theme = CupertinoTheme.of(context);
     
-    // Determine the main time to display on the left.
-    // For "twice daily", we might show the next upcoming time. For now, we'll show the first.
+    // Join all reminder times into a single string for display.
     final String displayTime = widget.therapy.reminderTimes.isNotEmpty
-        ? widget.therapy.reminderTimes[0]
-        : '--:--';
+        ? widget.therapy.reminderTimes.join(' - ')
+        : '--:--'; // Fallback if no time is set
 
     bool areDosesLow = false;
     if (widget.therapy.dosesRemaining != null) {
@@ -141,11 +156,7 @@ class _TherapyCardState extends State<TherapyCard> {
                 const SizedBox(height: 8),
                 Text(
                   displayTime,
-                  style: const TextStyle(
-                    fontSize: 22, // Larger font for the time
-                    fontWeight: FontWeight.bold,
-                    color: CupertinoColors.black,
-                  ),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
