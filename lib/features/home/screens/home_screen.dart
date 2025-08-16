@@ -2,14 +2,13 @@ import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:akora_app/core/services/notification_service.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/home/widgets/therapy_card.dart';
-//import 'package:akora_app/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
-  //const HomeScreen({super.key});
+  // const HomeScreen({super.key});
   // Add final fields to hold the dependencies
   final AppDatabase database;
   final NotificationService notificationService;
