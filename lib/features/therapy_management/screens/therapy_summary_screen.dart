@@ -1,6 +1,8 @@
 import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:akora_app/core/services/notification_service.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
+import 'dart:io';
+
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart';
 import 'package:akora_app/main.dart';
@@ -61,35 +63,37 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
   }
 
   Future<void> _saveAndConfirm(BuildContext context) async {
-    // Check necessary permission
-    if (await Permission.scheduleExactAlarm.status.isDenied) {
-      // If the permission is denied, we show a dialog and stop.
-      if (mounted) {
-        showCupertinoDialog(
-          context: context,
-          builder: (ctx) => CupertinoAlertDialog(
-            title: const Text('Permesso Necessario'),
-            content: const Text(
-                'Per impostare i promemoria, questa app ha bisogno di un permesso speciale.\n\nTocca "Apri Impostazioni", poi vai su "Sveglie e promemoria" e attiva l\'opzione.'),
-            actions: [
-              CupertinoDialogAction(
-                child: const Text('Annulla'),
-                onPressed: () => Navigator.pop(ctx),
-              ),
-              CupertinoDialogAction(
-                isDefaultAction: true,
-                child: const Text('Apri Impostazioni'),
-                onPressed: () {
-                  // This opens the app's specific settings page for the user.
-                  openAppSettings();
-                  Navigator.pop(ctx);
-                },
-              ),
-            ],
-          ),
-        );
+    // This check will only run on Android devices.
+    if (Platform.isAndroid) {
+      // Check for the exact alarm permission.
+      if (await Permission.scheduleExactAlarm.request().isDenied) {
+        // If the permission is denied after asking, show a helpful dialog.
+        if (mounted) {
+          showCupertinoDialog(
+            context: context,
+            builder: (ctx) => CupertinoAlertDialog(
+              title: const Text('Permesso Necessario'),
+              content: const Text(
+                  'Per impostare i promemoria, questa app ha bisogno di un permesso speciale.\n\nTocca "Apri Impostazioni", poi vai su "Sveglie e promemoria" e attiva l\'opzione.'),
+              actions: [
+                CupertinoDialogAction(
+                  child: const Text('Annulla'),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+                CupertinoDialogAction(
+                  isDefaultAction: true,
+                  child: const Text('Apri Impostazioni'),
+                  onPressed: () {
+                    openAppSettings();
+                    Navigator.pop(ctx);
+                  },
+                ),
+              ],
+            ),
+          );
+        }
+        return; // Stop the function if permission is denied.
       }
-      return; // IMPORTANT: Stop the function here if permission is denied.
     }
 
     if (_isSaving) return;
