@@ -9,6 +9,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class TherapySummaryScreen extends StatefulWidget {
   final TherapySetupData? setupData;
@@ -26,6 +27,7 @@ class TherapySummaryScreen extends StatefulWidget {
 
 class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
   late TherapySetupData currentData;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -59,6 +61,41 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
   }
 
   Future<void> _saveAndConfirm(BuildContext context) async {
+    // Check necessary permission
+    if (await Permission.scheduleExactAlarm.status.isDenied) {
+      // If the permission is denied, we show a dialog and stop.
+      if (mounted) {
+        showCupertinoDialog(
+          context: context,
+          builder: (ctx) => CupertinoAlertDialog(
+            title: const Text('Permesso Necessario'),
+            content: const Text(
+                'Per impostare i promemoria, questa app ha bisogno di un permesso speciale.\n\nTocca "Apri Impostazioni", poi vai su "Sveglie e promemoria" e attiva l\'opzione.'),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('Annulla'),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                child: const Text('Apri Impostazioni'),
+                onPressed: () {
+                  // This opens the app's specific settings page for the user.
+                  openAppSettings();
+                  Navigator.pop(ctx);
+                },
+              ),
+            ],
+          ),
+        );
+      }
+      return; // IMPORTANT: Stop the function here if permission is denied.
+    }
+
+    if (_isSaving) return;
+    setState(() {
+      _isSaving = true;
+    });
     try {
       if (currentData.initialTherapy != null) {
         // --- UPDATE LOGIC ---
@@ -133,6 +170,14 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
     } catch (e, s) {
       print('--- FAILED TO SAVE/UPDATE THERAPY: $e ---');
       print(s);
+    }finally {
+      // --- LOADING STATE MANAGEMENT (New) ---
+      // Make sure to turn off the loading indicator.
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 
@@ -196,11 +241,16 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
               const SizedBox(height: 20),
               CupertinoButton(
                 color: CupertinoColors.white,
-                onPressed: () => _saveAndConfirm(context),
-                child: Text(
-                  'SALVA E CONFERMA',
-                  style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold),
-                ),
+                // Disable the button when saving, and call the correct method.
+                onPressed: _isSaving ? null : () => _saveAndConfirm(context),
+                child: _isSaving
+                    // Show a spinner when saving
+                    ? const CupertinoActivityIndicator()
+                    // Show the text when not saving
+                    : Text(
+                        'SALVA E CONFERMA',
+                        style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold),
+                      ),
               ),
             ],
           ),
