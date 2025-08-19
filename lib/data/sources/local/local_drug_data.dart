@@ -3,6 +3,7 @@ import 'package:akora_app/data/models/drug_model.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 final List<Drug> sampleItalianDrugs = [
+  // Ansiolitici
   Drug(
     id: 'seryfil_0.5mg_20cpr',
     name: 'Seryfil',
@@ -10,7 +11,7 @@ final List<Drug> sampleItalianDrugs = [
     dosage: '0,50mg',
     quantityDescription: '20 compresse',
     form: DrugForm.tablet,
-    icon: FontAwesomeIcons.pills, // Tablet/Pill icon
+    icon: FontAwesomeIcons.pills,
   ),
   Drug(
     id: 'seryfil_0.75mgml_20ml',
@@ -19,7 +20,7 @@ final List<Drug> sampleItalianDrugs = [
     dosage: '0,75mg/ml',
     quantityDescription: '20ml gocce',
     form: DrugForm.drops,
-    icon: FontAwesomeIcons.eyeDropper, // Or .prescriptionBottle for general liquid
+    icon: FontAwesomeIcons.eyeDropper,
   ),
   Drug(
     id: 'seryfil_1mg_20cpr',
@@ -30,6 +31,26 @@ final List<Drug> sampleItalianDrugs = [
     form: DrugForm.tablet,
     icon: FontAwesomeIcons.pills,
   ),
+  Drug(
+    id: 'xanax_0.25mg_30cpr',
+    name: 'Xanax',
+    activeIngredient: 'Alprazolam',
+    dosage: '0,25mg',
+    quantityDescription: '30 compresse',
+    form: DrugForm.tablet,
+    icon: FontAwesomeIcons.pills,
+  ),
+  Drug(
+    id: 'lexotan_1.5mg_30cpr',
+    name: 'Lexotan',
+    activeIngredient: 'Bromazepam',
+    dosage: '1,5mg',
+    quantityDescription: '30 compresse',
+    form: DrugForm.tablet,
+    icon: FontAwesomeIcons.pills,
+  ),
+
+  // Antidolorifici / Antinfiammatori
   Drug(
     id: 'tachipirina_500mg_20cpr',
     name: 'Tachipirina',
@@ -58,15 +79,6 @@ final List<Drug> sampleItalianDrugs = [
     icon: FontAwesomeIcons.pills,
   ),
   Drug(
-    id: 'artaliv_100mg_30cps',
-    name: 'Artaliv',
-    activeIngredient: 'Celecoxib',
-    dosage: '100mg',
-    quantityDescription: '30 capsule',
-    form: DrugForm.capsule,
-    icon: FontAwesomeIcons.capsules, // Capsule icon
-  ),
-  Drug(
     id: 'brufen_400mg_30cpr',
     name: 'Brufen',
     activeIngredient: 'Ibuprofene',
@@ -76,12 +88,117 @@ final List<Drug> sampleItalianDrugs = [
     icon: FontAwesomeIcons.pills,
   ),
   Drug(
+    id: 'aspirina_500mg_20cpr',
+    name: 'Aspirina',
+    activeIngredient: 'Acido Acetilsalicilico',
+    dosage: '500mg',
+    quantityDescription: '20 compresse',
+    form: DrugForm.tablet,
+    icon: FontAwesomeIcons.pills,
+  ),
+  Drug(
+    id: 'voltaren_50mg_30cpr',
+    name: 'Voltaren',
+    activeIngredient: 'Diclofenac',
+    dosage: '50mg',
+    quantityDescription: '30 compresse',
+    form: DrugForm.tablet,
+    icon: FontAwesomeIcons.pills,
+  ),
+  Drug(
+    id: 'artaliv_100mg_30cps',
+    name: 'Artaliv',
+    activeIngredient: 'Celecoxib',
+    dosage: '100mg',
+    quantityDescription: '30 capsule',
+    form: DrugForm.capsule,
+    icon: FontAwesomeIcons.capsules,
+  ),
+
+  // Gastrointestinali
+  Drug(
     id: 'gaviscon_advance_20bust',
     name: 'Gaviscon Advance',
     activeIngredient: 'Sodio Alginato + Potassio Bicarbonato',
     dosage: '10ml',
     quantityDescription: '20 bustine monodose',
-    form: DrugForm.syrup, // Representing liquid in sachet
-    icon: FontAwesomeIcons.prescriptionBottle, // Or .kitMedical for sachets
+    form: DrugForm.syrup,
+    icon: FontAwesomeIcons.prescriptionBottle,
+  ),
+  Drug(
+    id: 'buscopan_10mg_30cpr',
+    name: 'Buscopan',
+    activeIngredient: 'Ioscina butilbromuro',
+    dosage: '10mg',
+    quantityDescription: '30 compresse',
+    form: DrugForm.tablet,
+    icon: FontAwesomeIcons.pills,
+  ),
+  Drug(
+    id: 'pantoprazolo_20mg_14cpr',
+    name: 'Pantoprazolo',
+    activeIngredient: 'Pantoprazolo',
+    dosage: '20mg',
+    quantityDescription: '14 compresse gastroresistenti',
+    form: DrugForm.tablet,
+    icon: FontAwesomeIcons.pills,
+  ),
+  Drug(
+    id: 'omeprazolo_20mg_14cpr',
+    name: 'Omeprazolo',
+    activeIngredient: 'Omeprazolo',
+    dosage: '20mg',
+    quantityDescription: '14 compresse gastroresistenti',
+    form: DrugForm.tablet,
+    icon: FontAwesomeIcons.pills,
+  ),
+
+  // Antibiotici
+  Drug(
+    id: 'augmentin_875mg_125mg_12cpr',
+    name: 'Augmentin',
+    activeIngredient: 'Amoxicillina + Acido Clavulanico',
+    dosage: '875mg + 125mg',
+    quantityDescription: '12 compresse',
+    form: DrugForm.tablet,
+    icon: FontAwesomeIcons.pills,
+  ),
+  Drug(
+    id: 'zitromax_500mg_3cpr',
+    name: 'Zitromax',
+    activeIngredient: 'Azitromicina',
+    dosage: '500mg',
+    quantityDescription: '3 compresse',
+    form: DrugForm.tablet,
+    icon: FontAwesomeIcons.pills,
+  ),
+
+  // Respiratori / Antistaminici
+  Drug(
+    id: 'fluibron_300mg_20cpr',
+    name: 'Fluibron',
+    activeIngredient: 'Carbocisteina',
+    dosage: '300mg',
+    quantityDescription: '20 compresse',
+    form: DrugForm.tablet,
+    icon: FontAwesomeIcons.pills,
+  ),
+  Drug(
+    id: 'zirtec_10mg_7cpr',
+    name: 'Zirtec',
+    activeIngredient: 'Cetirizina',
+    dosage: '10mg',
+    quantityDescription: '7 compresse',
+    form: DrugForm.tablet,
+    icon: FontAwesomeIcons.pills,
+  ),
+  Drug(
+    id: 'claritin_10mg_10cpr',
+    name: 'Claritine',
+    activeIngredient: 'Loratadina',
+    dosage: '10mg',
+    quantityDescription: '10 compresse',
+    form: DrugForm.tablet,
+    icon: FontAwesomeIcons.pills,
   ),
 ];
