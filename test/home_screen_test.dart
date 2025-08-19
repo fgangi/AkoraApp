@@ -13,9 +13,10 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
 import 'home_screen_test.mocks.dart';
+import 'package:akora_app/core/services/ai_api_service.dart';
 
 // This annotation MUST be here to tell the builder WHAT to generate.
-@GenerateMocks([AppDatabase, NotificationService, GoRouter])
+@GenerateMocks([AppDatabase, NotificationService, GoRouter,])
 
 void main() {
   //declare mock objects 

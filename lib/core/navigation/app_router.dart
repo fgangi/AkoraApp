@@ -13,6 +13,8 @@ import 'package:akora_app/features/therapy_management/screens/therapy_detail_scr
 
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
+import 'package:akora_app/main.dart';
+import 'package:akora_app/core/services/notification_service.dart';
 
 class AppRouter {
   // Route names for the existing, functional parts of the app.
@@ -33,7 +35,10 @@ class AppRouter {
       GoRoute(
         path: '/${homeRouteName}',
         name: homeRouteName,
-        builder: (context, state) => const MainScaffoldScreen(),
+        builder: (context, state) => MainScaffoldScreen(
+          database: db, // Provide the real database instance
+          notificationService: NotificationService(), // Provide a new instance of the service
+        ),
       ),
 
       // --- The Unified "Add/Edit Therapy" flow ---
