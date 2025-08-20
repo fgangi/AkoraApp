@@ -1,7 +1,7 @@
 // test/main_scaffold_screen_test.dart
 
-import 'dart:async'; // Needed for Stream.value
-import 'dart:io';   // Needed for Platform.environment
+import 'dart:async';
+import 'dart:io'; 
 
 import 'package:akora_app/core/services/notification_service.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
@@ -11,9 +11,9 @@ import 'package:akora_app/features/maps/screens/pharmacy_maps_screen.dart';
 import 'package:akora_app/features/scaffold/main_scaffold_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart'; // Needed for when()
+import 'package:mockito/mockito.dart';
 
-// Import the generated mock classes from your central generator file.
+// Import the generated mock classes
 import 'home_screen_test.mocks.dart';
 
 
@@ -40,11 +40,10 @@ void main() {
       mockDatabase = MockAppDatabase();
       mockNotificationService = MockNotificationService();
 
-      // --- CRITICAL: STUB ALL CHILD DEPENDENCIES ---
-      // 1. Stub for the HomeScreen's main stream to prevent it from crashing.
+      //Stub for the HomeScreen's main stream
       when(mockDatabase.watchAllActiveTherapies()).thenAnswer((_) => Stream.value([]));
 
-      // 2. Stub for the TherapyCard's stream to prevent it from crashing if it were to be built.
+      //Stub for the TherapyCard's stream
       when(mockDatabase.watchDoseLogsForDay(
         therapyId: anyNamed('therapyId'),
         day: anyNamed('day'),
@@ -59,7 +58,6 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert:
-      // Use the robust `find.descendant` to find the active screen within the complex tree.
       expect(
         find.descendant(
             of: find.byType(MainScaffoldScreen),
@@ -109,7 +107,7 @@ void main() {
     // --- TEST CASE 3: Tapping the Third Tab ---
     testWidgets('should switch to PharmacyMapsScreen when third tab is tapped',
         (tester) async {
-      // Arrange: Build the widget.
+      // Arrange:
       await pumpMainScaffold(tester);
       await tester.pumpAndSettle();
 
