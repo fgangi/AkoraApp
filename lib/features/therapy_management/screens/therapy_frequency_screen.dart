@@ -104,6 +104,22 @@ class _TherapyFrequencyScreenState extends State<TherapyFrequencyScreen> {
                 isSelected: _currentData.selectedFrequency == TakingFrequency.onceWeekly,
                 onTap: () => _onFrequencySelected(TakingFrequency.onceWeekly),
               ),
+              // This widget will only be visible when "onceWeekly" is selected.
+              AnimatedOpacity(
+                duration: const Duration(milliseconds: 300),
+                opacity: _currentData.selectedFrequency == TakingFrequency.onceWeekly ? 1.0 : 0.0,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 12.0, left: 8.0, right: 8.0),
+                  child: Text(
+                    "Il promemoria verrà impostato per lo stesso giorno della settimana della data di inizio della terapia.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                    ),
+                  ),
+                ),
+              ),
               const Spacer(),
               CupertinoButton.filled(
                 onPressed: _onConfirm,
