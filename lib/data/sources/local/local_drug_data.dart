@@ -5,33 +5,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 final List<Drug> sampleItalianDrugs = [
   // Ansiolitici
   Drug(
-    id: 'seryfil_0.5mg_20cpr',
-    name: 'Seryfil',
-    activeIngredient: 'Alprazolam',
-    dosage: '0,50mg',
-    quantityDescription: '20 compresse',
-    form: DrugForm.tablet,
-    icon: FontAwesomeIcons.pills,
-  ),
-  Drug(
-    id: 'seryfil_0.75mgml_20ml',
-    name: 'Seryfil',
-    activeIngredient: 'Alprazolam',
-    dosage: '0,75mg/ml',
-    quantityDescription: '20ml gocce',
-    form: DrugForm.drops,
-    icon: FontAwesomeIcons.eyeDropper,
-  ),
-  Drug(
-    id: 'seryfil_1mg_20cpr',
-    name: 'Seryfil',
-    activeIngredient: 'Alprazolam',
-    dosage: '1mg',
-    quantityDescription: '20 compresse',
-    form: DrugForm.tablet,
-    icon: FontAwesomeIcons.pills,
-  ),
-  Drug(
     id: 'xanax_0.25mg_30cpr',
     name: 'Xanax',
     activeIngredient: 'Alprazolam',

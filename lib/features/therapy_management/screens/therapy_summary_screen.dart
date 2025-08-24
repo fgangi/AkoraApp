@@ -197,11 +197,45 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
     final theme = CupertinoTheme.of(context);
     final pageBackgroundColor = theme.primaryColor.withOpacity(0.95);
 
+    // Determine if we are in a "Create" flow.
+    // In our logic, this is true if initialTherapy is null.
+    final bool isCreateMode = currentData.initialTherapy == null;
+
     return CupertinoPageScaffold(
       backgroundColor: pageBackgroundColor,
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('Riepilogo Terapia'),
-        previousPageTitle: 'Indietro', // Generic 'Back' title is safer
+        middle: const Text(
+          'Riepilogo Terapia',
+          style: TextStyle(color: CupertinoColors.white),
+        ),
+        
+        // We will build our own back/cancel button to have full control.
+        // The automaticallyImplyLeading: false prevents Flutter from adding its own.
+        automaticallyImplyLeading: false, 
+        leading: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () {
+            if (isCreateMode) {
+              // In create mode, "Annulla" should go all the way home.
+              context.goNamed(AppRouter.homeRouteName);
+            } else {
+              // In edit mode, "Indietro" should just go back one screen.
+              context.pop();
+            }
+          },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(CupertinoIcons.back, color: CupertinoColors.white),
+              const SizedBox(width: 4.0),
+              Text(
+                isCreateMode ? 'Annulla' : 'Indietro',
+                style: const TextStyle(color: CupertinoColors.white),
+              ),
+            ],
+          ),
+        ),
+        
         backgroundColor: pageBackgroundColor,
         brightness: Brightness.dark,
       ),
