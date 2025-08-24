@@ -88,7 +88,11 @@ class AppRouter {
         builder: (BuildContext context, GoRouterState state) {
           // This route is the end of the setup flow, so it always receives TherapySetupData.
           final TherapySetupData data = state.extra as TherapySetupData;
-          return TherapySummaryScreen(setupData: data);
+          return TherapySummaryScreen(
+            setupData: data,
+            database: db,
+            notificationService: NotificationService(),
+            );
         },
       ),
 

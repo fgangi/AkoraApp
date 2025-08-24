@@ -16,11 +16,15 @@ import 'package:permission_handler/permission_handler.dart';
 class TherapySummaryScreen extends StatefulWidget {
   final TherapySetupData? setupData;
   final Therapy? initialTherapy;
+  final AppDatabase database;
+  final NotificationService notificationService;
 
   const TherapySummaryScreen({
     super.key,
     this.setupData,
     this.initialTherapy,
+    required this.database,
+    required this.notificationService,
   }) : assert(setupData != null || initialTherapy != null);
 
   @override
@@ -66,7 +70,8 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
     // This check will only run on Android devices.
     if (Platform.isAndroid) {
       // Check for the exact alarm permission.
-      if (await Permission.scheduleExactAlarm.request().isDenied) {
+      final status = await Permission.scheduleExactAlarm.request();
+      if (status != PermissionStatus.granted) {
         // If the permission is denied after asking, show a helpful dialog.
         if (mounted) {
           showCupertinoDialog(
@@ -105,6 +110,8 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
         // --- UPDATE LOGIC ---
         print('--- UPDATING THERAPY ID: ${currentData.initialTherapy!.id} ---');
         
+        await widget.notificationService.cancelTherapyNotifications(currentData.initialTherapy!);
+
         final updatedTherapy = currentData.initialTherapy!.copyWith(
           takingFrequency: currentData.selectedFrequency,
           reminderTimes: currentData.reminderTimes,
@@ -115,24 +122,24 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
           dosesRemaining: Value(currentData.initialDoses),
           doseAmount: currentData.doseAmount,
         );
-        await db.updateTherapy(updatedTherapy);
+        await widget.database.updateTherapy(updatedTherapy);
         
         // --- CHECK LOW STOCK ON UPDATE ---
         if (updatedTherapy.dosesRemaining != null && 
             updatedTherapy.dosesRemaining! <= updatedTherapy.doseThreshold) {
-          await NotificationService().triggerLowStockNotification(
+          await widget.notificationService.triggerLowStockNotification(
             therapyId: updatedTherapy.id,
             drugName: updatedTherapy.drugName,
             remainingDoses: updatedTherapy.dosesRemaining!,
           );
         } else {
           // If the user updated the count to be ABOVE the threshold, cancel any old warning.
-          await NotificationService().cancelLowStockNotification(updatedTherapy.id);
+          await widget.notificationService.cancelLowStockNotification(updatedTherapy.id);
         }
 
         // Reschedule other notifications
-        await NotificationService().scheduleNotificationForTherapy(updatedTherapy);
-        await NotificationService().scheduleExpiryNotification(updatedTherapy);
+        await widget.notificationService.scheduleNotificationForTherapy(updatedTherapy);
+        await widget.notificationService.scheduleExpiryNotification(updatedTherapy);
         print('--- THERAPY UPDATED AND NOTIFICATIONS RESCHEDULED ---');
 
       } else {
@@ -150,13 +157,13 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
           dosesRemaining: Value(currentData.initialDoses),
           doseAmount: Value(currentData.doseAmount),
         );
-        final newTherapyId = await db.createTherapy(therapyToInsert);
-        final newTherapy = await db.getTherapyById(newTherapyId);
+        final newTherapyId = await widget.database.createTherapy(therapyToInsert);
+        final newTherapy = await widget.database.getTherapyById(newTherapyId);
         print('--- THERAPY SAVED, SCHEDULING NOTIFICATIONS ---');
         // --- CHECK LOW STOCK ON CREATE ---
         if (newTherapy.dosesRemaining != null && 
             newTherapy.dosesRemaining! <= newTherapy.doseThreshold) {
-          await NotificationService().triggerLowStockNotification(
+          await widget.notificationService.triggerLowStockNotification(
             therapyId: newTherapy.id,
             drugName: newTherapy.drugName,
             remainingDoses: newTherapy.dosesRemaining!,
@@ -164,8 +171,8 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
         }
 
         // Schedule other notifications
-        await NotificationService().scheduleNotificationForTherapy(newTherapy);
-        await NotificationService().scheduleExpiryNotification(newTherapy);
+        await widget.notificationService.scheduleNotificationForTherapy(newTherapy);
+        await widget.notificationService.scheduleExpiryNotification(newTherapy);
       }
 
       if (context.mounted) {
@@ -215,7 +222,7 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
                   children: [
                     _buildSummaryRow(
                       icon: FontAwesomeIcons.pills,
-                      text: currentData.currentDrug.fullDescription,
+                      text: '${currentData.currentDrug.name} ${currentData.currentDrug.dosage}',
                       onEdit: null,
                     ),
                     _buildSummaryRow(
