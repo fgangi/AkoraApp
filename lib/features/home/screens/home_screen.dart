@@ -12,7 +12,6 @@ import 'package:go_router/go_router.dart';
 import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
-  // const HomeScreen({super.key});
   // Add final fields to hold the dependencies
   final AppDatabase database;
   final NotificationService notificationService;
@@ -241,12 +240,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         CustomSlidableAction(
                           onPressed: (context) => _editTherapy(therapy),
                           backgroundColor: CupertinoColors.systemBlue,
-                          child: const Icon(CupertinoIcons.pencil, color: CupertinoColors.white, size: 30),
+                          child: const Icon(CupertinoIcons.pencil, color: CupertinoColors.white, size: 25),
                         ),
                         CustomSlidableAction(
                           onPressed: (context) => _deleteTherapy(therapy),
                           backgroundColor: CupertinoColors.destructiveRed,
-                          child: const Icon(CupertinoIcons.delete, color: CupertinoColors.white, size: 30),
+                          child: const Icon(CupertinoIcons.delete, color: CupertinoColors.white, size: 25),
                         ),
                       ],
                     ),

@@ -1,12 +1,10 @@
 // lib/features/scaffold/main_scaffold_screen.dart
 import 'package:akora_app/core/services/notification_service.dart';
-import 'package:akora_app/main.dart';
 import 'package:akora_app/features/chat/screens/ai_doctor_screen.dart';
 import 'package:akora_app/features/home/screens/home_screen.dart';
 import 'package:akora_app/features/maps/screens/pharmacy_maps_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
-import 'package:akora_app/core/services/notification_service.dart';
 
 class MainScaffoldScreen extends StatelessWidget {
   final AppDatabase database;

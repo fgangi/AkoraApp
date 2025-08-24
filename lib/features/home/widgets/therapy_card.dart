@@ -1,11 +1,9 @@
-import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:akora_app/core/services/notification_service.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/home/widgets/dose_status_icon.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
 
 class TherapyCard extends StatefulWidget {
   final Therapy therapy;

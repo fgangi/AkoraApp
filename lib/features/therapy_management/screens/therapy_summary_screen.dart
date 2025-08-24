@@ -5,7 +5,6 @@ import 'dart:io';
 
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart';
-import 'package:akora_app/main.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/cupertino.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
