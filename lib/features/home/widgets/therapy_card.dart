@@ -9,12 +9,14 @@ import 'package:go_router/go_router.dart';
 
 class TherapyCard extends StatefulWidget {
   final Therapy therapy;
+  final VoidCallback onTap;
   final AppDatabase database;
   final NotificationService notificationService;
 
   const TherapyCard({
     super.key,
     required this.therapy,
+    required this.onTap,
     required this.database,
     required this.notificationService,
   });
@@ -90,9 +92,7 @@ class _TherapyCardState extends State<TherapyCard> {
     }
 
     return GestureDetector(
-      onTap: () {
-        context.pushNamed(AppRouter.therapyDetailRouteName, extra: widget.therapy);
-      },
+      onTap: widget.onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
         decoration: BoxDecoration(

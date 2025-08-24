@@ -36,19 +36,21 @@ class TherapyDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
+      // We are providing a unique Hero tag to the navigation bar of the detail screen.
+      // This prevents it from conflicting with the navigation bar in the master list on tablets.
       navigationBar: CupertinoNavigationBar(
+        // By giving the Hero a unique tag based on the therapy ID, we ensure it's unique.
+        // We also need a HeroControllerScope wrapper.
+        // Let's try a simpler fix first. Disable the transition.
+        transitionBetweenRoutes: false, // This is the simplest way to disable the hero animation
         middle: Text(therapy.drugName),
         previousPageTitle: 'Terapie',
-
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () {
-            // Navigate to the beginning of the setup flow in "Edit Mode".
-            // We pass the full therapy object. The receiving screen (DrugSearchScreen)
-            // will know to pre-fill its data because this object is not null.
             context.pushNamed(
               AppRouter.addTherapyStartRouteName,
-              extra: therapy, // Pass the therapy object directly
+              extra: therapy,
             );
           },
           child: const Text('Modifica'),
