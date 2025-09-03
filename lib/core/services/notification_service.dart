@@ -220,6 +220,20 @@ class NotificationService {
   }
 
   // --- CANCELLATION LOGIC ---
+  Future<void> cancelSpecificDoseNotifications(Therapy therapy, TimeOfDay doseTime) async {
+    final today = DateTime.now();
+    
+    // Generate the IDs for today's main and snooze notifications for this specific dose time
+    int mainId = _generateUniqueId(therapy.id, today, doseTime, isSnooze: false);
+    int snoozeId = _generateUniqueId(therapy.id, today, doseTime, isSnooze: true);
+
+    // Cancel both
+    await _plugin.cancel(mainId);
+    await _plugin.cancel(snoozeId);
+    
+    debugPrint('Cancelled notifications for today for therapy ${therapy.id} at $doseTime. IDs: $mainId, $snoozeId');
+  }
+
   Future<void> cancelTherapyNotifications(Therapy therapy) async {
     for (final timeString in therapy.reminderTimes) {
       final timeParts = timeString.split(':');
@@ -243,37 +257,11 @@ class NotificationService {
   }
 
   // A unique ID per therapy, per day, per time slot.
-  int _generateUniqueId(int therapyId, DateTime date, TimeOfDay time) {
-    // We need to ensure the ID is a unique 32-bit signed integer.
-    // Max value is 2,147,483,647.
-
-    // Let's create an ID from components:
-    // Therapy ID (up to 999) + Day of Year (1-366) + Time (0-2359)
-    // To prevent overlap, we use multipliers.
-
-    final dayOfYear = int.parse(DateFormat("D").format(date)); // Max 366
-    final timePart = time.hour * 100 + time.minute;             // Max 2359
-
-    // The formula:
-    // therapyId * 1,000,000 gives space for the rest.
-    // dayOfYear * 10,000 gives space for time.
-    // This creates a unique number for every minute of every day for a given therapy.
-    
-    // Example: therapy 1, day 219, time 18:30 (1830)
-    // 1 * 1000000 = 1000000
-    // 219 * 10000 = 2190000
-    // 1830
-    // Total ID = 3191830 (well within the limit)
-
-    // Safety check in case therapyId gets very large
-    if (therapyId > 200) {
-      // If the ID is too big, this scheme could fail. We can use a hashing fallback.
-      // For now, this is robust enough for hundreds of therapies.
-      print("Warning: therapyId is large, which might risk ID collision or overflow.");
-    }
-    
-    final int uniqueId = (therapyId * 1000000) + (dayOfYear * 10000) + timePart;
-
-    return uniqueId;
+  int _generateUniqueId(int therapyId, DateTime date, TimeOfDay time, {bool isSnooze = false}) {
+    final dayOfYear = int.parse(DateFormat("D").format(date));
+    final timePart = time.hour * 100 + time.minute;
+    final baseId = (therapyId * 100000) + (dayOfYear * 1000) + timePart;
+    // Add a large, constant offset for snooze notifications to ensure the ID is unique
+    return isSnooze ? baseId + 500000000 : baseId;
   }
 }

@@ -58,8 +58,9 @@ class _TherapyCardState extends State<TherapyCard> {
       amount: amountToTake,
     );
 
-    await widget.notificationService.cancelTherapyNotifications(widget.therapy);
-    await widget.notificationService.scheduleNotificationForTherapy(widget.therapy);
+    // Simply cancel any pending notifications for this specific dose today.
+    // No rescheduling is needed.
+    await widget.notificationService.cancelSpecificDoseNotifications(widget.therapy, doseTime);
   }
 
   void _undoTaken(TimeOfDay doseTime) async {
@@ -73,7 +74,9 @@ class _TherapyCardState extends State<TherapyCard> {
       amount: amountToRestore,
     );
 
-    await widget.notificationService.cancelTherapyNotifications(widget.therapy);
+    // Just reschedule ALL notifications for the therapy. The service is smart
+    // enough to only schedule future ones. This is the safest way to bring
+    // back a potentially cancelled notification.
     await widget.notificationService.scheduleNotificationForTherapy(widget.therapy);
   }
 
