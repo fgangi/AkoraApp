@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:akora_app/features/maps/models/pharmacy_model.dart';
+import 'package:akora_app/features/maps/services/maps_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -11,7 +12,12 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
 
 class PharmacyMapsScreen extends StatefulWidget {
-  const PharmacyMapsScreen({super.key});
+  final IMapsService mapsService;
+  
+  const PharmacyMapsScreen({
+    super.key,
+    required this.mapsService,
+  });
 
   @override
   State<PharmacyMapsScreen> createState() => _PharmacyMapsScreenState();
@@ -52,31 +58,10 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
       });
     }
 
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      if (mounted) setState(() => _statusMessage = 'I servizi di localizzazione sono disabilitati.');
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        if (mounted) setState(() => _statusMessage = 'Permesso di localizzazione negato.');
-        return;
-      }
-    }
-    
-    if (permission == LocationPermission.deniedForever) {
-      if (mounted) setState(() => _statusMessage = 'Permesso negato permanentemente. Abilitalo dalle impostazioni.');
-      return;
-    } 
-
     try {
-      Position position = await Geolocator.getCurrentPosition();
+      // We just call our service. It handles all the complex logic.
+      Position position = await widget.mapsService.determinePosition();
+      
       if (mounted) {
         final newPosition = latlng.LatLng(position.latitude, position.longitude);
         setState(() {
@@ -87,14 +72,16 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
         await _findNearbyPharmacies(newPosition);
       }
     } catch (e) {
-      if (mounted) setState(() => _statusMessage = 'Impossibile ottenere la posizione: $e');
+      // The service throws a clear error message on failure, which we display.
+      if (mounted) setState(() => _statusMessage = e.toString());
     }
   }
 
   Future<void> _findNearbyPharmacies(latlng.LatLng center) async {
     if (mounted) setState(() => _isLoadingPharmacies = true);
-
-    final connectivityResult = await (Connectivity().checkConnectivity());
+    
+    // 1. Check connectivity via the service
+    final connectivityResult = await widget.mapsService.checkConnectivity();
     if (connectivityResult.contains(ConnectivityResult.none)) {
       if (mounted) {
         setState(() {
@@ -102,56 +89,24 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
           _isLoadingPharmacies = false;
         });
       }
-      return; // Stop the function if there's no internet
+      return;
     }
 
-    const radiusInMeters = 5000;
-    final String query = """
-      [out:json];
-      (node["amenity"="pharmacy"](around:$radiusInMeters,${center.latitude},${center.longitude}););
-      out center;
-    """;
-    
+    // 2. Find pharmacies via the service
     try {
-      final response = await http.post(
-        Uri.parse('https://overpass-api.de/api/interpreter'),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'data=$query',
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List<Pharmacy> foundPharmacies = [];
-        for (var element in (data['elements'] as List)) {
-          final tags = element['tags'];
-          if (tags != null && tags['name'] != null) {
-            final street = tags['addr:street'] ?? '';
-            final housenumber = tags['addr:housenumber'] ?? '';
-            final city = tags['addr:city'] ?? '';
-            final postcode = tags['addr:postcode'] ?? '';
-            String fullAddress = [street, housenumber, postcode, city]
-                .where((s) => s.isNotEmpty)
-                .join(', ');
-
-            foundPharmacies.add(Pharmacy(
-              id: element['id'],
-              name: tags['name'],
-              position: latlng.LatLng(element['lat'], element['lon']),
-              address: fullAddress.isNotEmpty ? fullAddress : null,
-            ));
-          }
-        }
-        if (mounted) {
-          setState(() {
-            _pharmacies = foundPharmacies;
-            _statusMessage = 'Trovate ${_pharmacies.length} farmacie nelle vicinanze.';
-          });
-        }
-      } else {
-        if (mounted) setState(() => _statusMessage = 'Errore nel caricare le farmacie.');
+      final foundPharmacies = await widget.mapsService.findNearbyPharmacies(center);
+      if (mounted) {
+        setState(() {
+          _pharmacies = foundPharmacies;
+          _statusMessage = 'Trovate ${foundPharmacies.length} farmacie nelle vicinanze.';
+        });
       }
-    } catch (e) {
-      if (mounted) setState(() => _statusMessage = 'Errore di rete. Controlla la connessione.');
+    } catch (e,stackTrace) {
+      if (mounted) {
+        print("--- ERROR caught in _findNearbyPharmacies: $e"); // Print the specific error
+        print("--- STACK TRACE: $stackTrace");
+        setState(() => _statusMessage = 'Errore nel caricare le farmacie.');
+      }
     } finally {
       if (mounted) setState(() => _isLoadingPharmacies = false);
     }
@@ -278,16 +233,9 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
             isDefaultAction: true,
             child: const Text('Indicazioni'),
             onPressed: () async {
-              Navigator.pop(ctx); // Close the dialog first
-              // Get available maps on the device
-              final availableMaps = await MapLauncher.installedMaps;
-              // Launch the first available map app
-              if (availableMaps.isNotEmpty) {
-                await availableMaps.first.showDirections(
-                  destination: Coords(pharmacy.position.latitude, pharmacy.position.longitude),
-                  destinationTitle: pharmacy.name,
-                );
-              }
+              Navigator.pop(ctx);
+              // Just call our service.
+              await widget.mapsService.launchMaps(pharmacy);
             },
           ),
         ],

@@ -5,6 +5,7 @@ import 'package:akora_app/features/home/screens/home_screen.dart';
 import 'package:akora_app/features/maps/screens/pharmacy_maps_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
+import 'package:akora_app/features/maps/services/maps_service.dart';
 
 class MainScaffoldScreen extends StatelessWidget {
   final AppDatabase database;
@@ -26,7 +27,8 @@ class MainScaffoldScreen extends StatelessWidget {
           const AiDoctorScreen(),
           // changed for the testing to provide the real database and a new instance of the notification service
           HomeScreen(database: database, notificationService: notificationService),
-          const PharmacyMapsScreen(),
+          // changed for testing, instead of a const, now create an instance and pass in the REAL service.
+          PharmacyMapsScreen(mapsService: MapsService()),
         ];
         return CupertinoTabView(
           builder: (BuildContext context) {
