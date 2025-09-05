@@ -58,8 +58,9 @@ class _TherapyCardState extends State<TherapyCard> {
       amount: amountToTake,
     );
 
-    await widget.notificationService.cancelTherapyNotifications(widget.therapy);
-    await widget.notificationService.scheduleNotificationForTherapy(widget.therapy);
+    // Simply cancel any pending notifications for this specific dose today.
+    // No rescheduling is needed.
+    await widget.notificationService.cancelSpecificDoseNotifications(widget.therapy, doseTime);
   }
 
   void _undoTaken(TimeOfDay doseTime) async {
@@ -73,14 +74,20 @@ class _TherapyCardState extends State<TherapyCard> {
       amount: amountToRestore,
     );
 
-    await widget.notificationService.cancelTherapyNotifications(widget.therapy);
+    // Just reschedule ALL notifications for the therapy. The service is smart
+    // enough to only schedule future ones. This is the safest way to bring
+    // back a potentially cancelled notification.
     await widget.notificationService.scheduleNotificationForTherapy(widget.therapy);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = CupertinoTheme.of(context);
-    final String displayTime = widget.therapy.reminderTimes.join(' - ');
+    
+    final reminderTimes = widget.therapy.reminderTimes.map((t) {
+      final parts = t.split(':');
+      return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+    }).toList();
 
     bool areDosesLow = false;
     if (widget.therapy.dosesRemaining != null) {
@@ -93,24 +100,32 @@ class _TherapyCardState extends State<TherapyCard> {
       onTap: widget.onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: CupertinoColors.white,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // --- Left Section: Icon and Time (Unchanged) ---
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 FaIcon(FontAwesomeIcons.pills, color: theme.primaryColor, size: 30),
                 const SizedBox(height: 8),
-                Text(
-                  displayTime,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: CupertinoColors.black),
-                ),
+                ...reminderTimes.map((time) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 2.0),
+                    child: Text(
+                      time.format(context),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: CupertinoColors.black),
+                    ),
+                  );
+                }).toList(),
               ],
             ),
             const SizedBox(width: 16),
+            
+            // --- Middle Section: Drug Details ---
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,82 +134,80 @@ class _TherapyCardState extends State<TherapyCard> {
                   Text(widget.therapy.drugName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: CupertinoColors.black), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
                   Text(widget.therapy.drugDosage, style: const TextStyle(fontSize: 15, color: CupertinoColors.secondaryLabel)),
-                  const SizedBox(height: 8),
-
-                  // Dose Amount Bubble (e.g., "1 dose")
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(color: theme.primaryColor.withOpacity(0.15), borderRadius: BorderRadius.circular(8.0)),
-                    child: Text(
-                      '${widget.therapy.doseAmount} ${int.tryParse(widget.therapy.doseAmount) == 1 ? "dose" : "dosi"}',
-                      style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                  ),
-
-                  // Doses Remaining Text - now on its own line
-                  if (widget.therapy.dosesRemaining != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6.0), // Add a little space above
-                      child: Text(
-                        'Rimaste: ${widget.therapy.dosesRemaining}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: areDosesLow ? CupertinoColors.systemRed : CupertinoColors.secondaryLabel,
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(color: theme.primaryColor.withOpacity(0.15), borderRadius: BorderRadius.circular(8.0)),
+                        child: Text(
+                          '${widget.therapy.doseAmount} ${int.tryParse(widget.therapy.doseAmount) == 1 ? "dose" : "dosi"}',
+                          style: TextStyle(color: theme.primaryColor, fontWeight: FontWeight.bold, fontSize: 14),
                         ),
                       ),
-                    ),
+                    ],
+                  ),
                 ],
               ),
             ),
             const SizedBox(width: 12),
+
+            // --- Right Section: Buttons and Remaining Count ---
             StreamBuilder<List<MedicationLog>>(
               stream: _logsStreamForToday,
               builder: (context, snapshot) {
                 final takenLogs = snapshot.data ?? [];
+                
                 final reminderTimes = widget.therapy.reminderTimes.map((t) {
                   final parts = t.split(':');
                   return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
                 }).toList()
                   ..sort((a, b) => (a.hour * 60 + a.minute).compareTo(b.hour * 60 + b.minute));
 
-                if (reminderTimes.length == 1) {
-                  final theOnlyDoseTime = reminderTimes.first;
-                  final isTaken = takenLogs.any((log) =>
-                      log.scheduledDoseTime.hour == theOnlyDoseTime.hour &&
-                      log.scheduledDoseTime.minute == theOnlyDoseTime.minute);
-
-                  return GestureDetector(
-                    onTap: () => isTaken ? _undoTaken(theOnlyDoseTime) : _markAsTaken(theOnlyDoseTime),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 50, height: 50,
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: isTaken ? CupertinoColors.systemGreen : CupertinoColors.systemGrey5),
-                      child: Center(child: FaIcon(FontAwesomeIcons.check, color: isTaken ? CupertinoColors.white : CupertinoColors.systemGrey, size: 22)),
+                // This is the Column that will hold both the action buttons and the text
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // --- Top Part: The Action Buttons ---
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: reminderTimes.map((doseTime) {
+                        final isTaken = takenLogs.any((log) =>
+                            log.scheduledDoseTime.hour == doseTime.hour &&
+                            log.scheduledDoseTime.minute == doseTime.minute);
+                        
+                        return Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child: DoseStatusIcon(
+                            isTaken: isTaken,
+                            onTap: () {
+                              if (isTaken) {
+                                _undoTaken(doseTime);
+                              } else {
+                                _markAsTaken(doseTime);
+                              }
+                            },
+                          ),
+                        );
+                      }).toList(),
                     ),
-                  );
-                }
 
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: reminderTimes.map((doseTime) {
-                    final isTaken = takenLogs.any((log) =>
-                        log.scheduledDoseTime.hour == doseTime.hour &&
-                        log.scheduledDoseTime.minute == doseTime.minute);
-                    
-                    return Padding(
-                      padding: const EdgeInsets.only(left: 6.0),
-                      child: DoseStatusIcon(
-                        isTaken: isTaken,
-                        onTap: () {
-                          if (isTaken) {
-                            _undoTaken(doseTime);
-                          } else {
-                            _markAsTaken(doseTime);
-                          }
-                        },
-                      ),
-                    );
-                  }).toList(),
+                    // --- Bottom Part: The "Rimaste" Text ---
+                    // Add some space between the buttons and the text
+                    const SizedBox(height: 8), 
+                    if (widget.therapy.dosesRemaining != null)
+                      Text(
+                        'Rimaste: ${widget.therapy.dosesRemaining}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: areDosesLow ? CupertinoColors.systemRed : CupertinoColors.secondaryLabel,
+                        ),
+                      )
+                    else
+                      // Add an empty SizedBox to maintain alignment if dose tracking is off
+                      const SizedBox(height: 17), // Approx height of the Text
+                  ],
                 );
               },
             ),

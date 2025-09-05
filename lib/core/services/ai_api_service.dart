@@ -1,15 +1,23 @@
 import 'package:dart_openai/dart_openai.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AiApiService {
-  // The service now initializes itself using the compile-time variable.
-  AiApiService() {
-    const apiKey = String.fromEnvironment('OPENAI_API_KEY');
-    if (apiKey.isEmpty) {
-      print('!!! WARNING: OPENAI_API_KEY is not set. AI Doctor will not work. !!!');
-    } else {
-      OpenAI.apiKey = apiKey;
+  // Use a static method for initialization
+  static void init() {
+    // Read the API key from the loaded dotenv environment
+    final apiKey = dotenv.env['OPENAI_API_KEY'];
+
+    if (apiKey == null || apiKey.isEmpty) {
+      print('!!! WARNING: OPENAI_API_KEY not found in .env file. AI Doctor will not work. !!!');
+      return;
     }
+    
+    OpenAI.apiKey = apiKey;
+    print("AI Api Service Initialized.");
   }
+  
+  // The constructor is now empty
+  AiApiService();
 
   // This method takes the history of messages and sends them to the AI.
   Future<String> getChatResponse(List<OpenAIChatCompletionChoiceMessageModel> messages) async {

@@ -234,13 +234,73 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
             child: const Text('Indicazioni'),
             onPressed: () async {
               Navigator.pop(ctx);
-              // Just call our service.
-              await widget.mapsService.launchMaps(pharmacy);
+              
+              final availableMaps = await MapLauncher.installedMaps;
+
+              if (availableMaps.isEmpty) {
+                _showDebugAlert("Nessuna App di Mappe", "Nessuna applicazione di mappe trovata sul dispositivo.");
+                return;
+              }
+              
+              if (availableMaps.length == 1) {
+                await availableMaps.first.showDirections(
+                  destination: Coords(pharmacy.position.latitude, pharmacy.position.longitude),
+                  destinationTitle: pharmacy.name,
+                );
+              } else {
+                showCupertinoModalPopup(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return CupertinoActionSheet(
+                      title: const Text('Apri con...'),
+                      actions: <CupertinoActionSheetAction>[
+                        for (var map in availableMaps)
+                          CupertinoActionSheetAction(
+                            onPressed: () {
+                              map.showDirections(
+                                destination: Coords(pharmacy.position.latitude, pharmacy.position.longitude),
+                                destinationTitle: pharmacy.name,
+                              );
+                              Navigator.pop(context);
+                            },
+                            child: Text(map.mapName),
+                          ),
+                      ],
+                      cancelButton: CupertinoActionSheetAction(
+                        child: const Text('Annulla'),
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                      ),
+                    );
+                  },
+                );
+              }
             },
           ),
         ],
       ),
     );
+  }
+
+  // You can add this helper method to your class for the "no maps" case
+  void _showDebugAlert(String title, String content) {
+    if (mounted) {
+      showCupertinoDialog(
+        context: context,
+        builder: (ctx) => CupertinoAlertDialog(
+          title: Text(title),
+          content: Text(content),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('OK'),
+              isDefaultAction: true,
+              onPressed: () => Navigator.pop(ctx),
+            )
+          ],
+        ),
+      );
+    }
   }
 
   @override
