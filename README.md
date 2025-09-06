@@ -90,10 +90,9 @@ To get a local copy up and running, follow these simple steps.
 
 ## 🖼️ Screenshots
 
-<!-- Add a few nice screenshots of your app here! -->
-| Home Screen | Therapy Detail | Pharmacy Map |
+| Home Screen | Therapy Details | Pharmacy Map |
 | :---: | :---: | :---: |
-| `assets/screenshots/home_screen.png` | `assets/screenshots/therapy_details.png` | `assets/screenshots/nearby_pharmacies.png` |
+| <img src="assets/screenshots/home_screen.png" width="300"/> | <img src="assets/screenshots/therapy_details.png" width="300"/> | <img src="assets/screenshots/nearby_pharmacies.png" width="300"/> |
 
 ---
 
