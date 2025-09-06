@@ -70,10 +70,9 @@ class NotificationService {
       return;
     }
     
-    // --- Cancel any existing notifications for this therapy first ---
-    // This is crucial for handling updates correctly.
+    // Always cancel old notifications before scheduling new ones.
     await cancelTherapyNotifications(therapy);
-    print("Cancelled old notifications for Therapy ID: ${therapy.id}");
+    print("Cancelled old notifications for Therapy ID: ${therapy.id}, now rescheduling.");
 
     // Loop through each reminder time saved for the therapy (e.g., ["08:30", "20:00"])
     for (final timeString in therapy.reminderTimes) {
@@ -213,55 +212,63 @@ class NotificationService {
     debugPrint('Triggered low stock notification for therapy ID: $therapyId');
   }
 
+  // --- CANCELLATION LOGIC ---
   // (In case the user updates their dose count upwards)
   Future<void> cancelLowStockNotification(int therapyId) async {
     final int lowStockId = -therapyId;
     await _plugin.cancel(lowStockId);
   }
 
-  // --- CANCELLATION LOGIC ---
-  Future<void> cancelSpecificDoseNotifications(Therapy therapy, TimeOfDay doseTime) async {
+  /// Cancels only TODAY's notifications for a single dose time.
+  /// Used when a user marks a dose as taken.
+  Future<void> cancelTodaysDoseNotification(int therapyId, TimeOfDay doseTime) async {
     final today = DateTime.now();
     
-    // Generate the IDs for today's main and snooze notifications for this specific dose time
-    int mainId = _generateUniqueId(therapy.id, today, doseTime, isSnooze: false);
-    int snoozeId = _generateUniqueId(therapy.id, today, doseTime, isSnooze: true);
+    // Generate the IDs for ONLY today's notifications for this specific time.
+    int mainId = _generateUniqueId(therapyId, today, doseTime, isSnooze: false);
+    int snoozeId = _generateUniqueId(therapyId, today, doseTime, isSnooze: true);
 
-    // Cancel both
+    // Cancel both.
     await _plugin.cancel(mainId);
     await _plugin.cancel(snoozeId);
     
-    debugPrint('Cancelled notifications for today for therapy ${therapy.id} at $doseTime. IDs: $mainId, $snoozeId');
+    debugPrint('Precisely cancelled today\'s notifications for therapy $therapyId at $doseTime. IDs: $mainId, $snoozeId');
   }
 
+  /// Cancels ALL scheduled notifications (daily reminders, potential snoozes, and expiry)
+  /// for a single therapy. This is the main, robust method to use.
   Future<void> cancelTherapyNotifications(Therapy therapy) async {
+    // 1. Cancel all daily reminders and their potential snoozes
     for (final timeString in therapy.reminderTimes) {
       final timeParts = timeString.split(':');
       final scheduledTime = TimeOfDay(hour: int.parse(timeParts[0]), minute: int.parse(timeParts[1]));
 
       for (int i = 0; i <= therapy.endDate.difference(therapy.startDate).inDays; i++) {
         final DateTime currentDay = therapy.startDate.add(Duration(days: i));
-        int dailyId = _generateUniqueId(therapy.id, currentDay, scheduledTime);
-        await _plugin.cancel(dailyId);
+        // Cancel the main notification for this slot
+        await _plugin.cancel(_generateUniqueId(therapy.id, currentDay, scheduledTime, isSnooze: false));
+        // Also cancel the snooze notification for this slot
+        await _plugin.cancel(_generateUniqueId(therapy.id, currentDay, scheduledTime, isSnooze: true));
       }
     }
-    // Also cancel the expiry notification
+    
+    // 2. Also cancel the expiry notification
     final int expiryId = -therapy.id - 100000;
     await _plugin.cancel(expiryId);
 
-    debugPrint('Cancelled all notifications for therapy ID: ${therapy.id}');
+    debugPrint('Successfully cancelled all potential notifications for therapy ID: ${therapy.id}');
   }
 
   Future<void> cancelAllNotifications() async {
     await _plugin.cancelAll();
   }
-
-  // A unique ID per therapy, per day, per time slot.
+  
+  // This unique ID generation is correct.
   int _generateUniqueId(int therapyId, DateTime date, TimeOfDay time, {bool isSnooze = false}) {
     final dayOfYear = int.parse(DateFormat("D").format(date));
     final timePart = time.hour * 100 + time.minute;
-    final baseId = (therapyId * 100000) + (dayOfYear * 1000) + timePart;
-    // Add a large, constant offset for snooze notifications to ensure the ID is unique
-    return isSnooze ? baseId + 500000000 : baseId;
+    final baseId = (therapyId * 1000000) + (dayOfYear * 10000) + timePart;
+    // Using a different multiplier ensures snooze IDs are in a completely different range.
+    return isSnooze ? baseId + 1000000000 : baseId;
   }
 }
