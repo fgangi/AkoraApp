@@ -110,7 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _editTherapy(Therapy therapy) {
-    context.pushNamed(
+    GoRouter.of(context).pushNamed(
       AppRouter.addTherapyStartRouteName,
       extra: therapy,
     );
@@ -124,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     } else {
       // On a phone, we navigate to the detail screen as before.
-      context.pushNamed(AppRouter.therapyDetailRouteName, extra: therapy);
+      GoRouter.of(context).pushNamed(AppRouter.therapyDetailRouteName, extra: therapy);
     }
   }
 
@@ -152,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () {
-            context.pushNamed(AppRouter.addTherapyStartRouteName);
+            GoRouter.of(context).pushNamed(AppRouter.addTherapyStartRouteName);
           },
           child: const Icon(CupertinoIcons.add),
         ),
@@ -176,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
               trailing: CupertinoButton(
                 padding: EdgeInsets.zero,
                 onPressed: () {
-                  context.pushNamed(AppRouter.addTherapyStartRouteName);
+                  GoRouter.of(context).pushNamed(AppRouter.addTherapyStartRouteName);
                 },
                 child: const Icon(CupertinoIcons.add),
               ),
