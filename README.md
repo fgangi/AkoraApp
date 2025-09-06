@@ -1,6 +1,6 @@
 # Akòra - Your Daily Therapeutic Support
 
-<img src="assets/images/akora_logo_banner-b.png" width="500"/>
+<img src="assets/images/akora_logo_banner-b.png" width="400"/>
 
 Akòra is a modern, cross-platform mobile application built with Flutter, designed to provide users with reliable daily support for their medication schedules. The app allows users to easily add, manage, and track their therapies, with a robust local notification system to ensure they never miss a dose.
 
@@ -54,37 +54,34 @@ To get a local copy up and running, follow these simple steps.
 
 ### Installation
 
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/your-username/akora-app.git
-   ```
-2. **Navigate into the project directory:**
-   ```sh
-   cd akora-app
-   ```
-3. **Install dependencies:**
-   ```sh
-   flutter pub get
-   ```
-4. **Run the build runner (for Drift database generation):**
-   ```sh
-   flutter pub run build_runner build --delete-conflicting-outputs
-   ```
-5. **Set up API Keys (for AI Chat):**
-   - Create a file named `.env` in the root of the project.
-   - Add your OpenAI API key to it: `OPENAI_API_KEY=sk-yourkeygoeshere`
-   - **Note:** The `.env` file is included in `.gitignore` and should not be committed.
-6. **Configure VS Code:**
-   - Ensure your `.vscode/launch.json` is set up to pass the `.env` file for debugging:
-     ```json
-     "args": [
-         "--dart-define-from-file=.env"
-     ]
-     ```
-7. **Run the app:**
-   ```sh
-   flutter run
-   ```
+1.  **Clone the repository:**
+    ```sh
+    git clone https://github.com/your-username/akora-app.git
+    ```
+2.  **Navigate into the project directory:**
+    ```sh
+    cd akora-app
+    ```
+3.  **Install dependencies:**
+    ```sh
+    flutter pub get
+    ```
+4.  **Run the build runner** (for Drift database generation):
+    ```sh
+    flutter pub run build_runner build --delete-conflicting-outputs
+    ```
+5.  **Set up the Environment File for API Keys:**
+    - At the root of the project, create a new file named `.env`.
+    - Add your OpenAI API key to this file. Refer to `.env.example` for the correct format:
+      ```
+      OPENAI_API_KEY=sk-yourkeygoeshere
+      ```
+    - **Note:** The `.env` file is included in `.gitignore` and should not be committed. Your collaborators will need to create their own.
+6.  **Run the app:**
+    ```sh
+    flutter run
+    ```
+    The application uses the `flutter_dotenv` package to load the API key from the `.env` file at runtime. No special run commands are needed.
 
 ---
 
