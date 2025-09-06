@@ -60,7 +60,7 @@ To get a local copy up and running, follow these simple steps.
     ```
 2.  **Navigate into the project directory:**
     ```sh
-    cd akora-app
+    cd akora_app
     ```
 3.  **Install dependencies:**
     ```sh
