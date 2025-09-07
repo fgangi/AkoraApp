@@ -13,10 +13,12 @@ import 'package:flutter/services.dart';
 
 class PharmacyMapsScreen extends StatefulWidget {
   final IMapsService mapsService;
+  final TileProvider? tileProviderForTest;
   
   const PharmacyMapsScreen({
     super.key,
     required this.mapsService,
+     this.tileProviderForTest,
   });
 
   @override
@@ -333,6 +335,7 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
                       TileLayer(
                         urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.example.akoraApp',
+                        tileProvider: widget.tileProviderForTest ?? NetworkTileProvider(),
                       ),
                       MarkerLayer(
                         markers: _pharmacies.map((pharmacy) {

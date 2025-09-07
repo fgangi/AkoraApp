@@ -10,12 +10,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:typed_data';
+import 'package:map_launcher/map_launcher.dart';
 
 // This is a fake TileProvider that provides a blank, transparent image.
 // It prevents flutter_map from making real network requests during tests.
-/*class FakeTileProvider extends TileProvider {
+class FakeTileProvider extends TileProvider {
   @override
-  ImageProvider getImage(Coords<num> coords, TileLayer options) {
+  ImageProvider getImage(TileCoordinates coords, TileLayer options) {
     // Return a transparent 1x1 pixel image.
     return MemoryImage(Uint8List.fromList([
       0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
@@ -26,13 +27,14 @@ import 'dart:typed_data';
       0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
     ]));
   }
-}*/
+}
 
 // --- MANUAL FAKE/MOCK CLASS ---
 class FakeMapsService implements IMapsService {
   bool shouldThrowPositionError = false;
   String positionError = 'Permission Denied';
   bool shouldThrowPharmacyError = false;
+  int findPharmaciesCallCount = 0;
   List<ConnectivityResult> connectivityResult = [ConnectivityResult.wifi];
   List<Pharmacy> pharmaciesToReturn = [];
 
@@ -54,6 +56,8 @@ class FakeMapsService implements IMapsService {
 
   @override
   Future<List<Pharmacy>> findNearbyPharmacies(LatLng center) async {
+     findPharmaciesCallCount++;
+
     if (shouldThrowPharmacyError) {
       throw Exception('API Error');
     }
@@ -71,7 +75,7 @@ void main() {
   Future<void> pumpScreen(WidgetTester tester) async {
     await tester.pumpWidget(
       CupertinoApp(
-        home: PharmacyMapsScreen(mapsService: fakeMapsService),
+        home: PharmacyMapsScreen(mapsService: fakeMapsService, tileProviderForTest: FakeTileProvider(),),
       ),
     );
   }
@@ -82,7 +86,7 @@ void main() {
 
   group('PharmacyMapsScreen', () {
     // --- TEST CASE 1: Successful Load Path (Corrected for Race Condition) ---
-    /*testWidgets('should show loading, then pharmacies on successful load',
+    testWidgets('should show loading, then pharmacies on successful load',
         (tester) async {
       // Arrange:
       // Configure our fake service to return successful data.
@@ -91,27 +95,19 @@ void main() {
         Pharmacy(id: 2, name: 'Farmacia 2', position: LatLng(45.01, 9.01)),
       ];
       
-      // --- ACT & ASSERT (Part 1: Initial State) ---
+      // act
       await pumpScreen(tester);
-      
-      // At this exact moment, only the FIRST frame has rendered.
-      // The async work inside initState has started but not yet completed.
-      // This is the correct time to check for the initial loading message.
       expect(find.text('Accesso alla posizione...'), findsOneWidget);
-      
-      // --- ACT & ASSERT (Part 2: Final State) ---
-      // NOW, we let all the fake Futures from our service complete and
-      // allow the UI to rebuild and settle into its final state.
       await tester.pumpAndSettle();
 
       // The screen should have rebuilt with the final data from the fake service.
       expect(find.text('Trovate 2 farmacie nelle vicinanze.'), findsOneWidget);
-      // The initial message should now be gone.
-      expect(find.text('Accesso alla posizione...'), findsNothing);
-      
-      expect(find.byType(Marker), findsNWidgets(2));
-      expect(find.byType(CupertinoActivityIndicator), findsNothing);
-    });*/
+
+      final markerLayer = find.byType(MarkerLayer);
+      expect(markerLayer, findsOneWidget);
+      final layerWidget = tester.widget<MarkerLayer>(markerLayer);
+      expect(layerWidget.markers.length, 2);
+    });
 
     testWidgets('should show error message when location permission is denied',
         (tester) async {
@@ -154,6 +150,58 @@ void main() {
 
       // Assert:
       expect(find.text('Errore nel caricare le farmacie.'), findsOneWidget);
+    });
+
+     testWidgets('tapping "Cerca in questa zona" button calls findNearbyPharmacies', (tester) async {
+      // Arrange
+      await pumpScreen(tester);
+      await tester.pumpAndSettle();
+
+      //reset the counter
+      fakeMapsService.findPharmaciesCallCount = 0;
+
+      // Act
+      await tester.tap(find.text('Cerca in questa zona'));
+      await tester.pumpAndSettle();
+
+      // Assert
+      expect(fakeMapsService.findPharmaciesCallCount, 1);
+    });
+
+    testWidgets('tapping a map marker should show pharmacy info dialog', (tester) async {
+      // Arrange
+      fakeMapsService.pharmaciesToReturn = [
+        Pharmacy(id: 1, name: 'Farmacia Centrale', address: 'Via Roma 1', position: LatLng(45.0, 9.0)),
+      ];
+      await pumpScreen(tester);
+      await tester.pumpAndSettle();
+      
+      final markerLayerFinder = find.byType(MarkerLayer);
+      expect(markerLayerFinder, findsOneWidget);
+
+      final layerWidget = tester.widget<MarkerLayer>(markerLayerFinder);
+      expect(layerWidget.markers.length, 1);
+
+      final placemarkFinder = find.descendant(
+        of: markerLayerFinder,
+        matching: find.byIcon(CupertinoIcons.placemark_fill),
+      );
+
+      
+      if (placemarkFinder.evaluate().isEmpty) {
+        final globalPlacemark = find.byIcon(CupertinoIcons.placemark_fill);
+        expect(globalPlacemark, findsOneWidget);
+        await tester.tap(globalPlacemark);
+      } else {
+        expect(placemarkFinder, findsOneWidget);
+        await tester.tap(placemarkFinder);
+      }
+
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CupertinoAlertDialog), findsOneWidget);
+      expect(find.text('Farmacia Centrale'), findsOneWidget);
+      expect(find.textContaining('Via Roma 1'), findsOneWidget);
     });
   });
 }
