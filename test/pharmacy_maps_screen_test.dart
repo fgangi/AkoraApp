@@ -85,11 +85,11 @@ void main() {
   });
 
   group('PharmacyMapsScreen', () {
-    // --- TEST CASE 1: Successful Load Path (Corrected for Race Condition) ---
+    // --- TEST CASE 1: Successful Load Path  ---
     testWidgets('should show loading, then pharmacies on successful load',
         (tester) async {
       // Arrange:
-      // Configure our fake service to return successful data.
+      // Configure fake service to return successful data.
       fakeMapsService.pharmaciesToReturn = [
         Pharmacy(id: 1, name: 'Farmacia 1', position: LatLng(45.0, 9.0)),
         Pharmacy(id: 2, name: 'Farmacia 2', position: LatLng(45.01, 9.01)),
@@ -112,7 +112,7 @@ void main() {
     testWidgets('should show error message when location permission is denied',
         (tester) async {
       // Arrange:
-      // Configure our fake service to throw a position error.
+      // Configure fake service to throw a position error.
       fakeMapsService.shouldThrowPositionError = true;
       fakeMapsService.positionError = 'Permesso di localizzazione negato.';
 
@@ -121,7 +121,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert:
-      // The screen should display the error thrown by our fake service.
+      // The screen should display the error 
       expect(find.text('Permesso di localizzazione negato.'), findsOneWidget);
       expect(find.byType(Marker), findsNothing);
     });

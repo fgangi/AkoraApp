@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart' as latlng;
 import 'package:map_launcher/map_launcher.dart';
+import 'package:flutter/foundation.dart';
 
 // This is the "contract" or "interface" for our service.
 // It defines WHAT the service can do, but not HOW it does it.
@@ -19,6 +20,15 @@ abstract class IMapsService {
 // This is the REAL implementation that the live app will use.
 // It implements the contract and contains all the original plugin code.
 class MapsService implements IMapsService {
+  final http.Client _httpClient;
+
+  // The real app will use this default constructor.
+  MapsService() : _httpClient = http.Client();
+
+  // The test will use this special constructor to inject fake client.
+  @visibleForTesting
+  MapsService.testable(this._httpClient);
+
   @override
   Future<List<ConnectivityResult>> checkConnectivity() {
   // This is a direct call to the plugin.
@@ -59,7 +69,7 @@ class MapsService implements IMapsService {
     (node["amenity"="pharmacy"](around:$radiusInMeters,${center.latitude},${center.longitude}););
     out center;
   """;
-  final response = await http.post(
+  final response = await _httpClient.post(
     Uri.parse('https://overpass-api.de/api/interpreter'),
     headers: {'Content-Type': 'application/x-www-form-urlencoded'},
     body: 'data=$query',
