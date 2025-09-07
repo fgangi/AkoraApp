@@ -14,16 +14,23 @@ void onDidReceiveBackgroundNotificationResponse(NotificationResponse notificatio
 }
 
 class NotificationService {
+  late FlutterLocalNotificationsPlugin _plugin;
+  FlutterLocalNotificationsPlugin get plugin => _plugin;
+
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
-  NotificationService._internal();
+  NotificationService._internal() {
+    // --- The real app will use this constructor ---
+    _plugin = FlutterLocalNotificationsPlugin();
+  }
 
-  final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
-  FlutterLocalNotificationsPlugin get plugin => _plugin;
-  bool _isInitialized = false;
+  @visibleForTesting
+  NotificationService.testable(this._plugin);
+
+  bool isInitialized = false;
 
   Future<void> init() async {
-    if (_isInitialized) return;
+    if (isInitialized) return;
 
     tz.initializeTimeZones();
     try {
@@ -49,7 +56,7 @@ class NotificationService {
     );
 
     await _requestPermissions();
-    _isInitialized = true;
+    isInitialized = true;
     debugPrint("NotificationService fully initialized.");
   }
 
@@ -65,7 +72,7 @@ class NotificationService {
 
   // --- CORE APP SCHEDULING ---
   Future<void> scheduleNotificationForTherapy(Therapy therapy) async {
-    if (!_isInitialized) {
+    if (!isInitialized) {
       debugPrint("NotificationService not initialized. Cannot schedule.");
       return;
     }
