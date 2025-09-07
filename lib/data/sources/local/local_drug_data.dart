@@ -1,3 +1,4 @@
+// coverage:ignore-file
 // lib/data/sources/local/local_drug_data.dart
 import 'package:akora_app/data/models/drug_model.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';

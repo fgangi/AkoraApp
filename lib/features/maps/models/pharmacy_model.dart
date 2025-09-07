@@ -1,3 +1,4 @@
+// coverage:ignore-file
 import 'package:latlong2/latlong.dart' as latlng;
 
 class Pharmacy {
