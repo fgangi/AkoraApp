@@ -50,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _dayChangeTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
       final now = DateTime.now();
       // If the timer fires and the time is between 00:00 and 00:01,
-      // it's very likely the day has just changed.
+      // it's very likely the day has just changed.q
       if (now.hour == 0 && now.minute <= 1) {
         print("--- Midnight detected! Rebuilding HomeScreen. ---");
         setState(() {
@@ -147,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       child: SafeArea(
-        child: _buildTherapyList(), // Extracted the list to a reusable method
+        child: _buildTherapyList(),
       ),
     );
   }
@@ -155,9 +155,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTabletLayout() {
     return Row(
       children: [
-        // --- MASTER PANEL ---
         SizedBox(
-          width: 350, // A good width for a master list on iPad
+          width: 350,
           child: CupertinoPageScaffold(
             navigationBar: CupertinoNavigationBar(
               middle: Image.asset('assets/images/akora_logo_banner-b.png', height: 28),
@@ -170,16 +169,15 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             child: SafeArea(
-              child: _buildTherapyList(), // Reuse the same list-building logic
+              child: _buildTherapyList(),
             ),
           ),
         ),
         const VerticalDivider(width: 1.0),
-        // --- DETAIL PANEL ---
         Expanded(
           child: _selectedTherapyForTablet == null
-              ? const EmptyDetailScaffold() // Show placeholder if nothing is selected
-              : TherapyDetailScreen(therapy: _selectedTherapyForTablet!), // Show detail screen
+              ? const EmptyDetailScaffold()
+              : TherapyDetailScreen(therapy: _selectedTherapyForTablet!),
         ),
       ],
     );
