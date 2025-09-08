@@ -47,7 +47,7 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
       // Default values for a new therapy
       selectedFrequency: TakingFrequency.onceDaily,
       // Use the new reminderTimes list property
-      reminderTimes: const ['08:30'], // Sensible default for once a day
+      reminderTimes: const ['08:30'],
       startDate: DateTime.now(),
       endDate: DateTime.now().add(const Duration(days: 7)),
       doseThreshold: 10,
@@ -99,7 +99,9 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
   Widget build(BuildContext context) {
     if (widget.initialTherapy != null) {
       return const CupertinoPageScaffold(
-        child: Center(child: CupertinoActivityIndicator()),
+        child: Center(
+          child: CupertinoActivityIndicator(),
+        ),
       );
     }
 
@@ -107,20 +109,26 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
       navigationBar: CupertinoNavigationBar(
         middle: const Text('Cerca Farmaco'),
         leading: CupertinoNavigationBarBackButton(
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            }
+          },
         ),
       ),
       child: SafeArea(
-        // Use a Column to separate the fixed search bar from the scrollable results.
         child: Column(
           children: [
-            // --- This is the fixed top part ---
+            // --- Fixed Top Part (Header and Search Bar) ---
             Padding(
               padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
               child: Column(
-                children: [
-                  const SizedBox(height: 12),
-                  const Text('Inserisci il nome del farmaco.', /* ... */),
+                children: [                  
+                  const Text(
+                    'Inserisci il nome del farmaco.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, color: CupertinoColors.secondaryLabel),
+                  ),
                   const SizedBox(height: 20),
                   CupertinoSearchTextField(
                     controller: _searchController,
@@ -130,9 +138,7 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
               ),
             ),
 
-            // --- This is the dynamic, scrollable bottom part ---
-            // The Expanded widget is crucial. It tells the child (the list or message)
-            // to take up all the REMAINING vertical space.
+            // --- Dynamic Bottom Part ---
             Expanded(
               child: () {
                 if (_isLoading) {
@@ -144,7 +150,6 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
                     itemCount: _searchResults.length,
                     itemBuilder: (context, index) {
                       final drug = _searchResults[index];
-                      // The Padding here provides spacing between items
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
                         child: _buildDrugResultItem(
@@ -187,11 +192,8 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
   }) {
     return GestureDetector(
       onTap: onTap,
-      // The Container itself is well-behaved and won't expand infinitely.
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
-        // REMOVED the margin from here. Spacing is now handled by the Padding in ListView.builder.
-        // margin: const EdgeInsets.only(bottom: 8.0), 
         decoration: BoxDecoration(
           color: CupertinoColors.tertiarySystemGroupedBackground.resolveFrom(context),
           borderRadius: BorderRadius.circular(10.0),
@@ -199,7 +201,7 @@ class _DrugSearchScreenState extends State<DrugSearchScreen> {
         child: Row(
           children: [
             SizedBox(
-              width: 40, // Adjust this width as needed for your largest icon
+              width: 40,
               child: Center(
                 child: FaIcon(icon, color: CupertinoTheme.of(context).primaryColor, size: 28),
               ),

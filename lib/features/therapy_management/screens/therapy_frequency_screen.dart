@@ -52,11 +52,9 @@ class _TherapyFrequencyScreenState extends State<TherapyFrequencyScreen> {
         previousPageTitle: _isSingleEditMode ? 'Riepilogo' : 'Cerca',
       ),
       child: SafeArea(
-        // --- THIS IS THE NEW LAYOUT STRUCTURE ---
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // The content that needs to scroll goes inside an Expanded ListView.
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(20.0),
@@ -121,7 +119,6 @@ class _TherapyFrequencyScreenState extends State<TherapyFrequencyScreen> {
               ),
             ),
 
-            // The button is now outside the scrollable area, fixed at the bottom.
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
               child: CupertinoButton.filled(
@@ -141,7 +138,6 @@ class _TherapyFrequencyScreenState extends State<TherapyFrequencyScreen> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    // This helper method is unchanged and correct.
     final theme = CupertinoTheme.of(context);
     return GestureDetector(
       onTap: onTap,

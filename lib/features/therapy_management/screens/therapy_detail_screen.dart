@@ -36,13 +36,8 @@ class TherapyDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      // We are providing a unique Hero tag to the navigation bar of the detail screen.
-      // This prevents it from conflicting with the navigation bar in the master list on tablets.
       navigationBar: CupertinoNavigationBar(
-        // By giving the Hero a unique tag based on the therapy ID, we ensure it's unique.
-        // We also need a HeroControllerScope wrapper.
-        // Let's try a simpler fix first. Disable the transition.
-        transitionBetweenRoutes: false, // This is the simplest way to disable the hero animation
+        transitionBetweenRoutes: false,
         middle: Text(therapy.drugName),
         previousPageTitle: 'Terapie',
         trailing: CupertinoButton(
@@ -100,12 +95,12 @@ class TherapyDetailScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 35, // Adjust this width as needed
+            width: 35,
             child: Center(
               child: FaIcon(icon, color: CupertinoColors.secondaryLabel, size: 22),
             ),
           ),
-          const SizedBox(width: 16), // Adjust spacing if needed
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

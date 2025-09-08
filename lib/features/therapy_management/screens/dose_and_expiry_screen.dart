@@ -164,7 +164,7 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
       children: [
         CupertinoButton(onPressed: onDecrement, child: const Icon(CupertinoIcons.minus_circle)),
         Container(
-          width: 80, // Give it a fixed width for consistent alignment
+          width: 80,
           padding: const EdgeInsets.symmetric(vertical: 12),
           margin: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
@@ -179,7 +179,6 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
         ),
         CupertinoButton(onPressed: onIncrement, child: const Icon(CupertinoIcons.add_circled)),
         const SizedBox(width: 8),
-        // Use a SizedBox to give the label a fixed width, helping to center the whole component
         SizedBox(
           width: 50,
           child: Text(label, style: const TextStyle(color: CupertinoColors.secondaryLabel, fontSize: 18)),

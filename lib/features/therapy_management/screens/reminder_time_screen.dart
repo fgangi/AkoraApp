@@ -13,7 +13,6 @@ class ReminderTimeScreen extends StatefulWidget {
 }
 
 class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
-  // We manage a LIST of times now.
   late List<DateTime> _selectedDateTimes;
   late int _requiredTimePickers;
 
@@ -84,7 +83,6 @@ class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            // The main content is now a ListView to allow scrolling if needed
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -113,7 +111,7 @@ class _ReminderTimeScreenState extends State<ReminderTimeScreen> {
                             ),
                           ),
                         SizedBox(
-                          height: 150, // A more compact height
+                          height: 150,
                           child: CupertinoDatePicker(
                             mode: CupertinoDatePickerMode.time,
                             initialDateTime: _selectedDateTimes[index],

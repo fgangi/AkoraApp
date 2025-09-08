@@ -7,9 +7,7 @@ import 'package:latlong2/latlong.dart' as latlng;
 import 'package:map_launcher/map_launcher.dart';
 import 'package:flutter/foundation.dart';
 
-// This is the "contract" or "interface" for our service.
-// It defines WHAT the service can do, but not HOW it does it.
-// The screen will only know about this abstract version.
+// This is the contract that both the real and mock implementations will follow.
 abstract class IMapsService {
   Future<Position> determinePosition();
   Future<List<Pharmacy>> findNearbyPharmacies(latlng.LatLng center);

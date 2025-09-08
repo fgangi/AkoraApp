@@ -12,11 +12,9 @@ import 'package:go_router/go_router.dart';
 import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
-  // Add final fields to hold the dependencies
   final AppDatabase database;
   final NotificationService notificationService;
 
-  // Add a new constructor that accepts and requires these dependencies
   const HomeScreen({
     super.key,
     required this.database,
@@ -27,7 +25,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // The stream now points back to the simple query for ALL active therapies.
   late Stream<List<Therapy>> _therapiesStream;
   Therapy? _selectedTherapyForTablet;
   Timer? _dayChangeTimer;
@@ -38,7 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    //_therapiesStream = db.watchAllActiveTherapies();
     _therapiesStream = widget.database.watchAllActiveTherapies();
     _startDayChangeListener();
   }
@@ -57,9 +53,6 @@ class _HomeScreenState extends State<HomeScreen> {
       // it's very likely the day has just changed.
       if (now.hour == 0 && now.minute <= 1) {
         print("--- Midnight detected! Rebuilding HomeScreen. ---");
-        // Changing the key of the ListView is a clean and effective way
-        // to force Flutter to dispose of the old list and build a new one from scratch.
-        // This will cause all TherapyCards to re-run their initState.
         setState(() {
           _listViewKey = UniqueKey();
         });
@@ -130,11 +123,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // LayoutBuilder is the key to responsive UI. It checks the available space
-    // and lets you build a different widget tree based on it.
     return LayoutBuilder(
       builder: (context, constraints) {
-        // We use our helper, but checking constraints directly is also fine.
         if (isTablet(context)) {
           return _buildTabletLayout();
         } else {
@@ -144,7 +134,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // This method contains your original build logic for the phone UI.
   Widget _buildPhoneLayout() {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
@@ -163,11 +152,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
   
-  // This method builds the new master-detail UI for tablets.
   Widget _buildTabletLayout() {
     return Row(
       children: [
-        // --- MASTER PANEL (Left Side - The List) ---
+        // --- MASTER PANEL ---
         SizedBox(
           width: 350, // A good width for a master list on iPad
           child: CupertinoPageScaffold(
@@ -187,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const VerticalDivider(width: 1.0),
-        // --- DETAIL PANEL (Right Side - The Content) ---
+        // --- DETAIL PANEL ---
         Expanded(
           child: _selectedTherapyForTablet == null
               ? const EmptyDetailScaffold() // Show placeholder if nothing is selected
@@ -253,7 +241,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       therapy: therapy,
                       database: widget.database,
                       notificationService: widget.notificationService,
-                      // Pass the new onTap handler to the card
                       onTap: () => _onTherapyTapped(therapy),
                     ),
                   ),

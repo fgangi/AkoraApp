@@ -20,7 +20,6 @@ class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal() {
-    // --- The real app will use this constructor ---
     _plugin = FlutterLocalNotificationsPlugin();
   }
 
@@ -111,7 +110,6 @@ class NotificationService {
           continue; // Skip to the next day if it doesn't match the frequency
         }
         
-        // --- The rest of the scheduling logic ---
         final tz.TZDateTime scheduledDate = tz.TZDateTime(
           tz.local,
           currentDay.year,
@@ -226,8 +224,8 @@ class NotificationService {
     await _plugin.cancel(lowStockId);
   }
 
-  /// Cancels only TODAY's notifications for a single dose time.
-  /// Used when a user marks a dose as taken.
+  // Cancels only TODAY's notifications for a single dose time.
+  // Used when a user marks a dose as taken.
   Future<void> cancelTodaysDoseNotification(int therapyId, TimeOfDay doseTime) async {
     final today = DateTime.now();
     
@@ -245,7 +243,7 @@ class NotificationService {
   /// Cancels ALL scheduled notifications (daily reminders, potential snoozes, and expiry)
   /// for a single therapy. This is the main, robust method to use.
   Future<void> cancelTherapyNotifications(Therapy therapy) async {
-    // 1. Cancel all daily reminders and their potential snoozes
+    // Cancel all daily reminders and their potential snoozes
     for (final timeString in therapy.reminderTimes) {
       final timeParts = timeString.split(':');
       final scheduledTime = TimeOfDay(hour: int.parse(timeParts[0]), minute: int.parse(timeParts[1]));
@@ -259,7 +257,7 @@ class NotificationService {
       }
     }
     
-    // 2. Also cancel the expiry notification
+    // Also cancel the expiry notification
     final int expiryId = -therapy.id - 100000;
     await _plugin.cancel(expiryId);
 
@@ -270,7 +268,6 @@ class NotificationService {
     await _plugin.cancelAll();
   }
   
-  // This unique ID generation is correct.
   int _generateUniqueId(int therapyId, DateTime date, TimeOfDay time, {bool isSnooze = false}) {
     final dayOfYear = int.parse(DateFormat("D").format(date));
     final timePart = time.hour * 100 + time.minute;

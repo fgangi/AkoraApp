@@ -7,7 +7,7 @@ class TherapySetupData {
   Drug currentDrug;
   TakingFrequency selectedFrequency;
   
-  List<String> reminderTimes; // e.g., ["08:30", "20:00"]
+  List<String> reminderTimes;
   
   DateTime startDate;
   DateTime endDate;

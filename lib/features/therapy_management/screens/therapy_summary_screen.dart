@@ -309,7 +309,7 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
       child: Row(
         children: [
           SizedBox(
-            width: 30, // Adjust this width
+            width: 30,
             child: Center(
               child: FaIcon(icon, color: CupertinoColors.white, size: 24),
             ),
@@ -335,7 +335,7 @@ class _TherapySummaryScreenState extends State<TherapySummaryScreen> {
             )
           // If onEdit is null, show an empty SizedBox to maintain alignment.
           else
-            const SizedBox(width: 44), // Same approximate width as the button
+            const SizedBox(width: 44),
         ],
       ),
     );

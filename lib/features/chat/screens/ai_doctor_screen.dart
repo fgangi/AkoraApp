@@ -46,7 +46,6 @@ class _AiDoctorScreenState extends State<AiDoctorScreen> {
   }
 
   Future<void> _getAiResponse() async {
-    // 1. Create the "System Prompt" to define the AI's persona and rules.
     final systemMessage = OpenAIChatCompletionChoiceMessageModel(
       role: OpenAIChatMessageRole.system,
       content: [
@@ -79,7 +78,6 @@ class _AiDoctorScreenState extends State<AiDoctorScreen> {
       ],
     );
 
-    // 2. Convert our app's message history to the format OpenAI requires.
     final messageHistory = _messages.reversed.map((message) {
       return OpenAIChatCompletionChoiceMessageModel(
         role: message.user.id == _currentUser.id
@@ -91,20 +89,16 @@ class _AiDoctorScreenState extends State<AiDoctorScreen> {
       );
     }).toList();
 
-    // 3. Combine the system prompt with the message history.
     final fullPrompt = [systemMessage, ...messageHistory];
     
-    // 4. Call our API service.
     final responseText = await _apiService.getChatResponse(fullPrompt);
     
-    // 5. Create a new ChatMessage with the AI's response.
     final aiMessage = ChatMessage(
       user: _aiAgent,
       createdAt: DateTime.now(),
       text: responseText,
     );
 
-    // 6. Update the UI.
     if (mounted) {
       setState(() {
         _messages.insert(0, aiMessage);

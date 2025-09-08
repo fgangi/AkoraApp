@@ -2,7 +2,6 @@ import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AiApiService {
-  // Use a static method for initialization
   static void init() {
     // Read the API key from the loaded dotenv environment
     final apiKey = dotenv.env['OPENAI_API_KEY'];
@@ -16,7 +15,6 @@ class AiApiService {
     print("AI Api Service Initialized.");
   }
   
-  // The constructor is now empty
   AiApiService();
 
   // This method takes the history of messages and sends them to the AI.

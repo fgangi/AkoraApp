@@ -16,7 +16,7 @@ void main() async {
   await dotenv.load(fileName: ".env");
 
   // Initialize the notification service.
-  AiApiService.init(); // We will create this init method
+  AiApiService.init();
   await NotificationService().init();
 
   // Initialize the database instance.

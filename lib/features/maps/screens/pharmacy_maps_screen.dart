@@ -82,7 +82,7 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
   Future<void> _findNearbyPharmacies(latlng.LatLng center) async {
     if (mounted) setState(() => _isLoadingPharmacies = true);
     
-    // 1. Check connectivity via the service
+    // Check connectivity via the service
     final connectivityResult = await widget.mapsService.checkConnectivity();
     if (connectivityResult.contains(ConnectivityResult.none)) {
       if (mounted) {
@@ -94,7 +94,7 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
       return;
     }
 
-    // 2. Find pharmacies via the service
+    // Find pharmacies via the service
     try {
       final foundPharmacies = await widget.mapsService.findNearbyPharmacies(center);
       if (mounted) {
@@ -105,7 +105,7 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
       }
     } catch (e,stackTrace) {
       if (mounted) {
-        print("--- ERROR caught in _findNearbyPharmacies: $e"); // Print the specific error
+        print("--- ERROR caught in _findNearbyPharmacies: $e");
         print("--- STACK TRACE: $stackTrace");
         setState(() => _statusMessage = 'Errore nel caricare le farmacie.');
       }
@@ -285,7 +285,6 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
     );
   }
 
-  // You can add this helper method to your class for the "no maps" case
   void _showDebugAlert(String title, String content) {
     if (mounted) {
       showCupertinoDialog(
@@ -312,15 +311,13 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
         maintainBottomViewPadding: true,
         child: Column(
           children: [
-            // --- CUSTOM HEADER WITH SEARCH BAR ---
             _buildHeader(),
 
-            // --- EXPANDED STACK FOR MAP AND OVERLAYS ---
             Expanded(
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // 1. The Map itself
+                  // The Map itself
                   FlutterMap(
                     mapController: _mapController,
                     options: MapOptions(
@@ -357,9 +354,7 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
                       ),
                     ],
                   ),
-                  
-                  // 2. Overlays on top of the map
-                  
+                                    
                   // "Search This Area" button
                   Positioned(
                     top: 10,
@@ -419,10 +414,8 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
                   // This appears on top of everything else when there are suggestions.
                   if (_suggestions.isNotEmpty)
                     Positioned.fill(
-                      // We don't need 'top' because it's inside the Expanded Stack,
-                      // so it correctly fills the area below the header.
                       child: Container(
-                        color: CupertinoColors.white.withOpacity(0.95), // Semi-transparent background
+                        color: CupertinoColors.white.withOpacity(0.95),
                         child: ListView.builder(
                           padding: EdgeInsets.zero,
                           itemCount: _suggestions.length,
@@ -431,12 +424,10 @@ class _PharmacyMapsScreenState extends State<PharmacyMapsScreen> {
                             return CupertinoListTile(
                               title: Text(suggestion, maxLines: 2, overflow: TextOverflow.ellipsis),
                               onTap: () {
-                                // We update the controller's text WITHOUT triggering the listener.
                                 _searchController.removeListener(_onSearchChanged);
                                 _searchController.text = suggestion;
                                 _searchController.addListener(_onSearchChanged);
                                 
-                                // Now we call the geocode function.
                                 _geocodeAndSearchAddress(suggestion);
                               },
                             );

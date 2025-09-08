@@ -2,7 +2,6 @@
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart';
 
-// Import all screens
 import 'package:akora_app/features/scaffold/main_scaffold_screen.dart';
 import 'package:akora_app/features/therapy_management/screens/drug_search_screen.dart';
 import 'package:akora_app/features/therapy_management/screens/therapy_frequency_screen.dart';
@@ -18,7 +17,6 @@ import 'package:akora_app/main.dart';
 import 'package:akora_app/core/services/notification_service.dart';
 
 class AppRouter {
-  // Route names for the existing, functional parts of the app.
   static const String homeRouteName = 'home';
   static const String addTherapyStartRouteName = 'addTherapyStart';
   static const String therapyFrequencyRouteName = 'therapyFrequency';
@@ -27,22 +25,19 @@ class AppRouter {
   static const String doseAndExpiryRouteName = 'doseAndExpiry';
   static const String therapySummaryRouteName = 'therapySummary';
   static const String therapyDetailRouteName = 'therapyDetail';
-  // Removed tutorialRouteName
 
   static final GoRouter router = GoRouter(
     initialLocation: '/${homeRouteName}',
     routes: <RouteBase>[
-      // --- Main App Screen ---
       GoRoute(
         path: '/${homeRouteName}',
         name: homeRouteName,
         builder: (context, state) => MainScaffoldScreen(
-          database: db, // Provide the real database instance
-          notificationService: NotificationService(), // Provide a new instance of the service
+          database: db,
+          notificationService: NotificationService(),
         ),
       ),
 
-      // --- The Unified "Add/Edit Therapy" flow ---
       GoRoute(
         path: '/${addTherapyStartRouteName}',
         name: addTherapyStartRouteName,
@@ -97,7 +92,6 @@ class AppRouter {
         },
       ),
 
-      // --- Therapy Detail Screen ---
       GoRoute(
         path: '/${therapyDetailRouteName}',
         name: therapyDetailRouteName,
@@ -108,7 +102,7 @@ class AppRouter {
       ),
       
     ],
-    // --- Error Handler ---
+    // Error Handler
     errorBuilder: (context, state) => CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
         middle: Text('Pagina non Trovata'),

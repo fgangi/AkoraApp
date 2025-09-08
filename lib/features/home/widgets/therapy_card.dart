@@ -103,7 +103,7 @@ class _TherapyCardState extends State<TherapyCard> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // --- Left Section: Icon and Time (Unchanged) ---
+            // --- Left Section: Icon and Time ---
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -166,7 +166,6 @@ class _TherapyCardState extends State<TherapyCard> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    // --- Top Part: The Action Buttons ---
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: reminderTimes.map((doseTime) {
@@ -190,7 +189,6 @@ class _TherapyCardState extends State<TherapyCard> {
                       }).toList(),
                     ),
 
-                    // --- Bottom Part: The "Rimaste" Text ---
                     // Add some space between the buttons and the text
                     const SizedBox(height: 8), 
                     if (widget.therapy.dosesRemaining != null)
@@ -202,8 +200,7 @@ class _TherapyCardState extends State<TherapyCard> {
                         ),
                       )
                     else
-                      // Add an empty SizedBox to maintain alignment if dose tracking is off
-                      const SizedBox(height: 17), // Approx height of the Text
+                      const SizedBox(height: 17), // Placeholder to keep alignment
                   ],
                 );
               },
