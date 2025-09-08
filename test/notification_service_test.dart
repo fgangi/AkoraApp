@@ -192,5 +192,143 @@ void main() {
       expect(fakePlugin.cancelCallCount, 1);
       expect(fakePlugin.lastCancelledId, -1); // ID is -therapyId
     });
+
+    test('edit a therapy skips scheduling past times but still cancels previous reminders', () async {
+      // Arrange: therapy scheduled for TODAY but at a time that already passed
+      final now = DateTime.now();
+      final yesterday = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 1));
+      final pastTimeString = '08:00';
+
+      final therapy = Therapy(
+        id: 42,
+        drugName: 'Past Drug',
+        drugDosage: '10mg',
+        doseAmount: '1',
+        takingFrequency: TakingFrequency.onceDaily,
+        reminderTimes: [pastTimeString],
+        startDate: yesterday,
+        endDate: yesterday,
+        doseThreshold: 5,
+        isActive: true,
+        isPaused: false,
+      );
+
+      // Act
+      await notificationService.scheduleNotificationForTherapy(therapy);
+
+      // Assert:
+      // - cancel should be called for main + snooze + expiry (3)
+      // - zonedSchedule should NOT be called because the scheduled time is in the past
+      expect(fakePlugin.cancelCallCount, 3);
+      expect(fakePlugin.zonedScheduleCallCount, 0);
+    });
+
+    test('twiceDaily create reminders twice a day every day', () async {
+      // Arrange: start in the future to ensure times are not in the past
+      final now = DateTime.now();
+      final tomorrow = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+      final dayAfter = tomorrow.add(const Duration(days: 1));
+      final therapy = Therapy(
+        id: 7,
+        drugName: 'MultiDay Drug',
+        drugDosage: '20mg',
+        doseAmount: '1',
+        takingFrequency: TakingFrequency.twiceDaily,
+        reminderTimes: ['08:00', '20:00'],
+        startDate: tomorrow,
+        endDate: dayAfter, // two days total
+        doseThreshold: 2,
+        isActive: true,
+        isPaused: false,
+      );
+
+      fakePlugin.cancelCallCount = 0;
+      fakePlugin.zonedScheduleCallCount = 0;
+
+      // Act
+      await notificationService.scheduleNotificationForTherapy(therapy);
+
+      // Assert:
+      // cancelCallCount: for each time (2) * each day (2) * (main + snooze = 2) + expiry (1)
+      // => 2 * 2 * 2 + 1 = 9
+      expect(fakePlugin.cancelCallCount, 9);
+      // zonedScheduleCallCount: 2 times * 2 days = 4 scheduled notifications
+      expect(fakePlugin.zonedScheduleCallCount, 4);
+    });
+
+    test('expire date notification', () async {
+      // Arrange
+      final now = DateTime.now();
+      final expiryDate = now.add(const Duration(days: 10));
+      final tomorrow = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+      final therapy = Therapy(
+        id: 11,
+        drugName: 'Expiry Drug',
+        drugDosage: '5mg',
+        doseAmount: '1',
+        takingFrequency: TakingFrequency.onceDaily,
+        reminderTimes: ['09:00'],
+        startDate: tomorrow,
+        endDate: tomorrow,
+        expiryDate: expiryDate,
+        doseThreshold: 1,
+        isActive: true,
+        isPaused: false,
+      );
+
+      fakePlugin.cancelCallCount = 0;
+      fakePlugin.zonedScheduleCallCount = 0;
+
+      // Act
+      await notificationService.scheduleExpiryNotification(therapy);
+
+      expect(fakePlugin.cancelCallCount, 1);
+      expect(fakePlugin.zonedScheduleCallCount, 1);
+    });
+
+    test('cancelAllNotifications delete all previously scheduled notifications', () async {
+      // Arrange
+      fakePlugin.cancelCallCount = 0;
+
+      // Act
+      await notificationService.cancelAllNotifications();
+
+      // Assert
+      expect(fakePlugin.cancelCallCount, 999);
+    });
+
+    test('onceWeekly only schedules on notification on matching weekday', () async {
+      // Arrange
+      final now = DateTime.now();
+      // find next week day
+      int daysToWed = (DateTime.wednesday - now.weekday) % 7;
+      if (daysToWed <= 0) daysToWed += 7;
+      final nextWednesday = DateTime(now.year, now.month, now.day).add(Duration(days: daysToWed));
+      final endDate = nextWednesday.add(const Duration(days: 6)); // one-week range
+      final therapy = Therapy(
+        id: 99,
+        drugName: 'Weekly Drug',
+        drugDosage: '1mg',
+        doseAmount: '1',
+        takingFrequency: TakingFrequency.onceWeekly,
+        reminderTimes: ['10:00'],
+        startDate: nextWednesday,
+        endDate: endDate,
+        doseThreshold: 1,
+        isActive: true,
+        isPaused: false,
+      );
+
+      fakePlugin.cancelCallCount = 0;
+      fakePlugin.zonedScheduleCallCount = 0;
+
+      // Act
+      await notificationService.scheduleNotificationForTherapy(therapy);
+
+      // Assert:
+      // cancelCallCount: timeCount(1) * daysCount(7) * 2 (main + snooze) + expiry(1) = 1*7*2 +1 = 15
+      expect(fakePlugin.cancelCallCount, 15);
+      expect(fakePlugin.zonedScheduleCallCount, 1);
+    });
   });
 }

@@ -96,5 +96,85 @@ void main() {
       // We expect the method to throw an Exception when the fake client returns a non-200 status code.
       expect(() => call(const LatLng(0, 0)), throwsA(isA<Exception>()));
     });
+
+    test('parses address fields into a full address (street, housenumber, postcode, city)', () async {
+      // Arrange: element contains address fields
+      final fakeJsonResponse = '''
+      {
+        "elements": [
+          {
+            "id": 10,
+            "lat": 45.1,
+            "lon": 9.1,
+            "tags": {
+              "name": "Farmacia Indirizzo",
+              "addr:street": "Via Roma",
+              "addr:housenumber": "1",
+              "addr:postcode": "00100",
+              "addr:city": "Rome"
+            }
+          }
+        ]
+      }
+      ''';
+      fakeHttpClient.responseBody = fakeJsonResponse;
+      fakeHttpClient.statusCode = 200;
+
+      // Act
+      final pharmacies = await mapsService.findNearbyPharmacies(const LatLng(0, 0));
+
+      // Assert
+      expect(pharmacies, isA<List<Pharmacy>>());
+      expect(pharmacies.length, 1);
+      final p = pharmacies.first;
+      expect(p.id, 10);
+      expect(p.name, 'Farmacia Indirizzo');
+      // Note: MapsService orders address parts as [street, housenumber, postcode, city]
+      expect(p.address, 'Via Roma, 1, 00100, Rome');
+    });
+
+    test('skips elements without a name tag (no Pharmacy created)', () async {
+      // Arrange: elements array contains an element with tags but no name
+      final fakeJsonResponse = '''
+      {
+        "elements": [
+          { "id": 20, "lat": 45.2, "lon": 9.2, "tags": { "amenity": "pharmacy" } },
+          { "id": 21, "lat": 45.3, "lon": 9.3, "tags": null }
+        ]
+      }
+      ''';
+      fakeHttpClient.responseBody = fakeJsonResponse;
+      fakeHttpClient.statusCode = 200;
+
+      // Act
+      final pharmacies = await mapsService.findNearbyPharmacies(const LatLng(0, 0));
+
+      // Assert — none should be created because name is missing
+      expect(pharmacies, isA<List<Pharmacy>>());
+      expect(pharmacies, isEmpty);
+    });
+
+    test('malformed JSON response throws a FormatException', () async {
+      // Arrange: response body is not valid JSON
+      fakeHttpClient.responseBody = 'this is not json';
+      fakeHttpClient.statusCode = 200;
+
+      // Act & Assert
+      expect(
+        () => mapsService.findNearbyPharmacies(const LatLng(0, 0)),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('http client throws -> mapsService propagates exception', () async {
+      // Arrange: simulate network-level throw from client
+      fakeHttpClient.shouldThrowError = true;
+
+      // Act & Assert: the call should throw
+      expect(
+        () => mapsService.findNearbyPharmacies(const LatLng(0, 0)),
+        throwsA(isA<Exception>()),
+      );
+    });
   });
 }

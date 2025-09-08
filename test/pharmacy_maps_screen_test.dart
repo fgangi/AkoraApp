@@ -203,5 +203,52 @@ void main() {
       expect(find.text('Farmacia Centrale'), findsOneWidget);
       expect(find.textContaining('Via Roma 1'), findsOneWidget);
     });
+
+    testWidgets('tapping a map marker with no address shows dialog with just the title', (tester) async {
+      fakeMapsService.pharmaciesToReturn = [
+        Pharmacy(id: 1, name: 'Farmacia Senza Indirizzo', position: LatLng(45.0, 9.0)),
+      ];
+
+      await pumpScreen(tester);
+      await tester.pumpAndSettle();
+
+      final markerLayerFinder = find.byType(MarkerLayer);
+      expect(markerLayerFinder, findsOneWidget);
+      final layerWidget = tester.widget<MarkerLayer>(markerLayerFinder);
+      expect(layerWidget.markers.length, 1);
+
+      final placemarkFinder = find.byIcon(CupertinoIcons.placemark_fill);
+      expect(placemarkFinder, findsOneWidget);
+      await tester.tap(placemarkFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CupertinoAlertDialog), findsOneWidget);
+      expect(find.text('Farmacia Senza Indirizzo'), findsOneWidget);
+      expect(find.textContaining('Via'), findsNothing);
+    });
+
+    testWidgets('typing less than 3 characters clears suggestions', (tester) async {
+      await pumpScreen(tester);
+      await tester.enterText(find.byType(CupertinoSearchTextField), 'Ro');
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(find.byType(CupertinoListTile), findsNothing);
+    });
+
+    testWidgets('tapping recenter button calls determinePosition (and triggers pharmacy search)', (tester) async {
+      fakeMapsService.pharmaciesToReturn = [Pharmacy(id: 1, name: 'P', position: LatLng(45, 9))];
+
+      await pumpScreen(tester);
+      await tester.pumpAndSettle();
+
+      fakeMapsService.findPharmaciesCallCount = 0;
+      final recenterFinder = find.byIcon(CupertinoIcons.location_fill);
+      expect(recenterFinder, findsOneWidget);
+
+      await tester.tap(recenterFinder);
+      await tester.pumpAndSettle();
+
+      expect(fakeMapsService.findPharmaciesCallCount >= 1, true);
+    });
+
   });
 }
