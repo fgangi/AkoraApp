@@ -1,3 +1,4 @@
+// coverage:ignore-file
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart';
 

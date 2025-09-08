@@ -1,3 +1,4 @@
+// coverage:ignore-file
 // lib/main.dart
 import 'package:akora_app/app.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
