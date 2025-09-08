@@ -1,7 +1,6 @@
 // test/drug_search_screen_test.dart
 
 import 'package:akora_app/core/navigation/app_router.dart';
-import 'package:akora_app/data/models/drug_model.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_setup_model.dart';
 import 'package:akora_app/features/therapy_management/screens/drug_search_screen.dart';
 import 'package:flutter/cupertino.dart';

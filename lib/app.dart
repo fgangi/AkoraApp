@@ -2,8 +2,6 @@
 import 'package:akora_app/core/navigation/app_router.dart';
 import 'package:akora_app/presentation/theme.dart';
 import 'package:flutter/cupertino.dart';
-
-// Import the localization library to get the delegates
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 class AkoraApp extends StatelessWidget {

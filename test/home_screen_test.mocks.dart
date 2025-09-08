@@ -916,6 +916,11 @@ class MockNotificationService extends _i1.Mock
   }
 
   @override
+  bool get isInitialized =>
+      (super.noSuchMethod(Invocation.getter(#isInitialized), returnValue: false)
+          as bool);
+
+  @override
   _i6.FlutterLocalNotificationsPlugin get plugin =>
       (super.noSuchMethod(
             Invocation.getter(#plugin),
@@ -925,6 +930,12 @@ class MockNotificationService extends _i1.Mock
             ),
           )
           as _i6.FlutterLocalNotificationsPlugin);
+
+  @override
+  set isInitialized(bool? _isInitialized) => super.noSuchMethod(
+    Invocation.setter(#isInitialized, _isInitialized),
+    returnValueForMissingStub: null,
+  );
 
   @override
   _i5.Future<void> init() =>
@@ -974,6 +985,21 @@ class MockNotificationService extends _i1.Mock
   _i5.Future<void> cancelLowStockNotification(int? therapyId) =>
       (super.noSuchMethod(
             Invocation.method(#cancelLowStockNotification, [therapyId]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> cancelTodaysDoseNotification(
+    int? therapyId,
+    _i8.TimeOfDay? doseTime,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#cancelTodaysDoseNotification, [
+              therapyId,
+              doseTime,
+            ]),
             returnValue: _i5.Future<void>.value(),
             returnValueForMissingStub: _i5.Future<void>.value(),
           )

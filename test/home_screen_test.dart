@@ -7,7 +7,6 @@ import 'package:akora_app/features/home/widgets/therapy_card.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mockito/annotations.dart';
@@ -16,8 +15,6 @@ import 'package:akora_app/features/therapy_management/screens/therapy_detail_scr
 import 'package:akora_app/features/home/widgets/empty_detail_scaffold.dart';
 
 import 'home_screen_test.mocks.dart';
-import 'package:akora_app/core/services/ai_api_service.dart';
-import 'package:akora_app/features/maps/services/maps_service.dart';
 
 // This annotation MUST be here to tell the builder WHAT to generate.
 @GenerateMocks([AppDatabase, NotificationService, GoRouter,])

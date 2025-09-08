@@ -25,7 +25,7 @@ void main() {
     late MockGoRouter mockGoRouter;
 
     // therapy object
-    Therapy createRealTherapy({int? dosesRemaining}) {
+    Therapy createRealTherapy({int? dosesRemaining, DateTime? expiryDate}) {
       return Therapy(
         id: 1,
         drugName: 'Real Test Therapy',
@@ -40,6 +40,7 @@ void main() {
         isActive: true,
         isPaused: false,
         dosesRemaining: dosesRemaining,
+        expiryDate: expiryDate,
       );
     }
 
@@ -353,6 +354,69 @@ void main() {
         verify(mockGoRouter.goNamed(AppRouter.homeRouteName)).called(1);
         debugDefaultTargetPlatformOverride = null;
       });
+
+      testWidgets('in create mode, Annulla button is visible and navigates home without saving', (tester) async {
+      // Arrange
+      // We are in create mode, so initialTherapy is null
+      final initialData = createInitialData(initialTherapy: null);
+      await pumpScreen(tester, data: initialData);
+
+      // Act
+      // Find the "Annulla" button and tap it.
+      final annullaButton = find.text('Annulla');
+      expect(annullaButton, findsOneWidget);
+      await tester.tap(annullaButton);
+      await tester.pumpAndSettle();
+
+      // Assert
+      // Verify it navigated home and DID NOT call any save/update methods.
+      verify(mockGoRouter.goNamed(AppRouter.homeRouteName)).called(1);
+      verifyNever(mockDatabase.createTherapy(any));
+      verifyNever(mockDatabase.updateTherapy(any));
+    });
+
+    testWidgets('in edit mode, a back button is visible and pops the route', (tester) async {
+      // Arrange
+      final therapy = createRealTherapy();
+      // We are in a full edit flow, not a single-jump edit
+      final initialData = TherapySetupData.fromTherapy(therapy)..isSingleEditMode = false;
+
+      when(mockGoRouter.canPop()).thenReturn(true);
+      await pumpScreen(tester, data: initialData);
+
+      // --- THE FIX IS HERE ---
+      // Instead of finding by type, we find the widget that contains the "Indietro" text.
+      final backButton = find.widgetWithText(CupertinoButton, 'Indietro');
+      
+      expect(backButton, findsOneWidget);
+      await tester.tap(backButton);
+      await tester.pumpAndSettle();
+
+      // Assert
+      verify(mockGoRouter.pop()).called(1);
+      verifyNever(mockGoRouter.goNamed(any));
+    });
+
+    testWidgets('calls scheduleExpiryNotification when an expiry date is provided', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      
+      // Arrange
+      final expiryDate = DateTime.now().add(const Duration(days: 30));
+      final initialData = createInitialData(expiryDate: expiryDate);
+      
+      await pumpScreen(tester, data: initialData);
+
+      // Act
+      await tester.tap(find.text('SALVA E CONFERMA'));
+      await tester.pumpAndSettle();
+
+      // Assert
+      // Verify both the main and expiry notification methods were called.
+      verify(mockNotificationService.scheduleNotificationForTherapy(any)).called(1);
+      verify(mockNotificationService.scheduleExpiryNotification(any)).called(1);
+      
+      debugDefaultTargetPlatformOverride = null;
+    });
 
       /*testWidgets('shows permission dialog if permission is denied on Android', (tester) async {
         debugDefaultTargetPlatformOverride = TargetPlatform.android;

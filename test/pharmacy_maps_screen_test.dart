@@ -10,7 +10,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:typed_data';
-import 'package:map_launcher/map_launcher.dart';
 
 // This is a fake TileProvider that provides a blank, transparent image.
 // It prevents flutter_map from making real network requests during tests.
