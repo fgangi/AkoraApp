@@ -1,4 +1,3 @@
-// lib/features/scaffold/main_scaffold_screen.dart
 import 'package:akora_app/core/services/notification_service.dart';
 import 'package:akora_app/features/chat/screens/ai_doctor_screen.dart';
 import 'package:akora_app/features/home/screens/home_screen.dart';

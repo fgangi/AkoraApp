@@ -1,4 +1,3 @@
-// lib/features/therapy_management/models/therapy_setup_model.dart
 import 'package:akora_app/data/models/drug_model.dart';
 import 'package:akora_app/data/sources/local/app_database.dart';
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';

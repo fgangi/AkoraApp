@@ -1,5 +1,4 @@
 // coverage:ignore-file
-// lib/data/sources/local/app_database.dart
 import 'dart:convert';
 import 'package:akora_app/features/therapy_management/models/therapy_enums.dart';
 import 'package:drift/drift.dart';
