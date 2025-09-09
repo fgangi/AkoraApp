@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart' as latlng;
+import 'dart:io';
 
 import 'package:akora_app/features/maps/services/maps_service.dart';
 import 'package:akora_app/features/maps/models/pharmacy_model.dart';
