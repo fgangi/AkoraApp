@@ -4,16 +4,7 @@
   <img src="assets/images/akora_logo_banner-b.png" width="400"/>
   
   [![Flutter](https://img.shields.io/badge/Flutter-3.8.0+-02569B.svg?style=flat&logo=flutter)](https://flutter.dev)
-  [![Dart](https://img.shields.io/badge/Dart## 👥 Team
-
-<div align="center">
-
-| [Francesco Gangi](https://github.com/fgangi) | [Simone Grandi](https://github.com/BigSim0) | [Alessandro Salvatore](https://github.com/alesalv0) |
-|:---:|:---:|:---:|
-| **Lead Developer & Architect** | **Testing Lead & QA Engineer** | **Technical Writer & Designer** |
-| • Mobile app development & architecture<br/>• AI integration & OpenAI API<br/>• Core features implementation<br/>• Testing framework setup | • Comprehensive testing strategy<br/>• 377 test cases implementation<br/>• Quality assurance & coverage<br/>• Edge case testing | • Design document creation<br/>• Technical documentation<br/>• User experience planning<br/>• Project specifications |
-
-</div>75C2.svg?style=flat&logo=dart)](https://dart.dev)
+  [![Dart](https://img.shields.io/badge/Dart-3.8.0+-0175C2.svg?style=flat&logo=dart)](https://dart.dev)
   [![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20Android-lightgrey.svg)](https://flutter.dev)
   [![Tests](https://img.shields.io/badge/Tests-377%20passing-brightgreen.svg)](test/)
   [![Coverage](https://img.shields.io/badge/Coverage-90.5%25-brightgreen.svg)](coverage/)
@@ -303,14 +294,14 @@ Currently supports:
 
 ---
 
-## � Team
+## 👥 Team
 
 <div align="center">
 
 | [Francesco Gangi](https://github.com/fgangi) | [Simone Grandi](https://github.com/BigSim0) | [Alessandro Salvatore](https://github.com/alesalv0) |
 |:---:|:---:|:---:|
-| **Lead Developer** | **Developer** | **Developer** |
-| Mobile Architecture & AI Integration | UI/UX & Database Design | Maps & Location Services |
+| **Lead Developer & Architect** | **Testing Lead & QA Engineer** | **Technical Writer & Designer** |
+| • Mobile app development & architecture<br/>• AI integration & OpenAI API<br/>• Core features implementation<br/>• Co-developed testing framework & test cases | • Comprehensive testing strategy<br/>• Co-developed 377 test cases with Francesco<br/>• Quality assurance & coverage<br/>• Edge case testing | • Design document creation<br/>• Technical documentation<br/>• User experience planning<br/>• Project specifications |
 
 </div>
 
