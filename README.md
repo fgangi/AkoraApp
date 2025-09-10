@@ -301,7 +301,6 @@ Currently supports:
 | [Francesco Gangi](https://github.com/fgangi) | [Simone Grandi](https://github.com/BigSim0) | [Alessandro Salvatore](https://github.com/alesalv0) |
 |:---:|:---:|:---:|
 | **Lead Developer & Architect** | **Testing Lead & QA Engineer** | **Technical Writer & Designer** |
-| • Mobile app development & architecture<br/>• AI integration & OpenAI API<br/>• Core features implementation<br/>• Co-developed testing framework & test cases | • Comprehensive testing strategy<br/>• Co-developed 377 test cases with Francesco<br/>• Quality assurance & coverage<br/>• Edge case testing | • Design document creation<br/>• Technical documentation<br/>• User experience planning<br/>• Project specifications |
 
 </div>
 
