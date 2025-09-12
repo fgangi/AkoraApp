@@ -74,7 +74,7 @@ void main() {
     );
 
     // 2. Define the widget we will pump.
-    Widget testWidget = MaterialApp.router(
+    Widget appWidget = MaterialApp.router(
       // Use the .router constructor to integrate GoRouter properly.
       routerConfig: router,
       // We can wrap this in a CupertinoTheme to ensure Cupertino styles are available.
@@ -86,14 +86,14 @@ void main() {
 
     // 3. If a screen size is provided, wrap the entire app in a MediaQuery.
     if (screenSize != null) {
-      testWidget = MediaQuery(
+      appWidget = MediaQuery(
         data: MediaQueryData(size: screenSize),
-        child: testWidget,
+        child: appWidget,
       );
     }
 
     // 4. Pump the final, complete widget tree.
-    await tester.pumpWidget(testWidget);
+    await tester.pumpWidget(appWidget);
   }
 
   // setUp is a function that runs BEFORE each test to reset the mocks.
@@ -191,21 +191,7 @@ void main() {
       expect(find.text('Add/Edit Screen'), findsOneWidget);
     });
     
-    // --- TEST CASE 5: Therapy Card Navigation ---
-    /*testWidgets('tapping a therapy card navigates to detail screen', (tester) async {
-        final therapy = createDummyTherapy(id: 1, name: 'Aspirin');
-        await pumpHomeScreen(tester);
-        therapiesStreamController.add([therapy]);
-        await tester.pumpAndSettle();
-
-        await tester.tap(find.byType(TherapyCard));
-        await tester.pumpAndSettle();
-
-        // We can't easily verify a real GoRouter, so we test the effect.
-        expect(find.byType(HomeScreen), findsNothing);
-      });*/
-
-      // --- TEST CASE 6: Edit Navigation ---
+    // --- TEST CASE 6: Edit Navigation ---
     testWidgets('sliding item and tapping edit navigates correctly', (tester) async {
       const phoneScreenSize = Size(414, 896);
       await tester.binding.setSurfaceSize(phoneScreenSize);

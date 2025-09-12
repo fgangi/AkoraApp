@@ -418,40 +418,9 @@ void main() {
       
       debugDefaultTargetPlatformOverride = null;
     });
+  });
 
-      /*testWidgets('shows permission dialog if permission is denied on Android', (tester) async {
-        debugDefaultTargetPlatformOverride = TargetPlatform.android;
-
-        // Override the mock handler for THIS test to simulate a DENIED permission
-        TestWidgetsFlutterBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-          const MethodChannel('flutter.baseflow.com/permissions/methods'), (MethodCall methodCall) async {
-            if (methodCall.method == 'requestPermissions') {
-              return { (Permission.scheduleExactAlarm.value): PermissionStatus.denied.index};
-            }
-            if (methodCall.method == 'checkPermissionStatus') {
-              return PermissionStatus.denied.index;
-            }
-            return null;
-          });
-
-        final initialData = createInitialData();
-        await pumpScreen(tester, data: initialData);
-        
-        await tester.tap(find.text('SALVA E CONFERMA'));
-        await tester.pumpAndSettle();
-
-        // Assert: The dialog should appear, and no database/navigation calls were made
-        expect(find.text('Permesso'), findsOneWidget);
-        verifyNever(mockDatabase.createTherapy(any));
-        verifyNever(mockGoRouter.goNamed(any));
-        
-        debugDefaultTargetPlatformOverride = null;
-        TestWidgetsFlutterBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(const MethodChannel('flutter.baseflow.com/permissions/methods'), null);
-      });*/
-    });
-
-    // --- Additional comprehensive tests ---
+  // --- Additional comprehensive tests ---
     group('UI Display and Formatting Tests', () {
       testWidgets('displays different frequency formats correctly', (tester) async {
         // Test once daily

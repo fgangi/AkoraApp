@@ -1,4 +1,5 @@
-# Akòra - Your Daily Therapeutic Support 🏥💊
+# Akòra ![Tests](https://img.shields.io/badge/tests-399%20passing-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-90.3%25-brightgreen)Your Daily Therapeutic Support 🏥💊
 
 <div align="center">
   <img src="assets/images/akora_logo_banner-b.png" width="400"/>
@@ -7,7 +8,7 @@
   [![Dart](https://img.shields.io/badge/Dart-3.8.0+-0175C2.svg?style=flat&logo=dart)](https://dart.dev)
   [![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20Android-lightgrey.svg)](https://flutter.dev)
   [![Tests](https://img.shields.io/badge/Tests-377%20passing-brightgreen.svg)](test/)
-  [![Coverage](https://img.shields.io/badge/Coverage-90.5%25-brightgreen.svg)](coverage/)
+  [![Coverage](https://img.shields.io/badge/Coverage-90.3%25-brightgreen.svg)](coverage/)
 </div>
 
 ## 📱 About
@@ -244,8 +245,8 @@ open coverage/html/index.html
 - **Mock Testing**: External API and service dependencies
 
 ### Test Coverage
-- **✅ 377 Total Tests** - All passing with comprehensive coverage
-- **📊 90.5% Line Coverage** - Excellent test coverage across the codebase
+- **✅ 399 Total Tests** - All passing with comprehensive coverage
+- **📊 90.3% Line Coverage** - Excellent test coverage across the codebase
 - **🧪 Test Categories**:
   - AI API Service & Chat Integration
   - Notification Service & Scheduling  
