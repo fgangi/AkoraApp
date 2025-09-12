@@ -137,10 +137,12 @@ Before you begin, ensure you have the following installed:
    cp .env.example .env
    ```
    
-   Add your OpenAI API key:
+   Add your Gemini API key:
    ```env
-   OPENAI_API_KEY=sk-your-openai-api-key-here
+   GEMINI_API_KEY=your-gemini-api-key-here
    ```
+   
+   > **Note:** Get your Gemini API key from [Google AI Studio](https://aistudio.google.com/)
    
    > **Note:** The `.env` file is git-ignored for security. Each developer needs their own API key.
 
