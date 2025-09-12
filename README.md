@@ -87,6 +87,7 @@ This project was developed as a comprehensive mobile application portfolio piece
 ### AI & Chat Integration
 - **[dash_chat_2](https://pub.dev/packages/dash_chat_2)** - Modern chat UI components
 - **[dart_openai](https://pub.dev/packages/dart_openai)** - OpenAI API integration for AI assistant
+- **[google_generative_ai](https://pub.dev/packages/google_generative_ai)** - Google Gemini AI integration for enhanced AI capabilities
 
 ### UI & UX
 - **[font_awesome_flutter](https://pub.dev/packages/font_awesome_flutter)** - Comprehensive icon library
