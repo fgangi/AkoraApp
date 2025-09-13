@@ -1,5 +1,7 @@
 # Akòra ![Tests](https://img.shields.io/badge/tests-399%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-90.3%25-brightgreen)Your Daily Therapeutic Support 🏥💊
+![Coverage](https://img.shields.io/badge/coverage-90.3%25-brightgreen)
+
+Your Daily Therapeutic Support 🏥💊
 
 <div align="center">
   <img src="assets/images/akora_logo_banner-b.png" width="400"/>
