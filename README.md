@@ -1,5 +1,4 @@
-# Akòra ![Tests](https://img.shields.io/badge/tests-399%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-90.3%25-brightgreen)
+# Akòra
 
 Your Daily Therapeutic Support 🏥💊
 
@@ -9,7 +8,7 @@ Your Daily Therapeutic Support 🏥💊
   [![Flutter](https://img.shields.io/badge/Flutter-3.8.0+-02569B.svg?style=flat&logo=flutter)](https://flutter.dev)
   [![Dart](https://img.shields.io/badge/Dart-3.8.0+-0175C2.svg?style=flat&logo=dart)](https://dart.dev)
   [![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20Android-lightgrey.svg)](https://flutter.dev)
-  [![Tests](https://img.shields.io/badge/Tests-377%20passing-brightgreen.svg)](test/)
+  [![Tests](https://img.shields.io/badge/Tests-399%20passing-brightgreen.svg)](test/)
   [![Coverage](https://img.shields.io/badge/Coverage-90.3%25-brightgreen.svg)](coverage/)
 </div>
 
