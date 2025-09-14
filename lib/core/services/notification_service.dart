@@ -164,7 +164,18 @@ class NotificationService {
     );
 
     if (scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) {
-      // Logic for immediate notification if expiry is soon can be added here
+      // If expiry is soon (within 7 days), schedule an immediate notification
+      await _plugin.show(
+        expiryId,
+        'Farmaco in Scadenza: ${therapy.drugName}',
+        'La tua confezione di ${therapy.drugName} scadrà il ${DateFormat('dd/MM/yyyy').format(therapy.expiryDate!)}.',
+        const NotificationDetails(
+          android: AndroidNotificationDetails('expiry_alerts_channel_id', 'Avvisi di Scadenza', channelDescription: 'Notifiche per farmaci in scadenza.', importance: Importance.high, priority: Priority.high),
+          iOS: DarwinNotificationDetails(presentAlert: true, presentBadge: true, presentSound: true),
+        ),
+        payload: 'expiry_${therapy.id}',
+      );
+      debugPrint('Triggered immediate expiry notification $expiryId for therapy ${therapy.drugName} (expires ${therapy.expiryDate})');
       return;
     }
 
