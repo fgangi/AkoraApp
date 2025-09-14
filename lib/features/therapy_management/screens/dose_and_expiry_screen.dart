@@ -60,6 +60,9 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
   }
 
   void _showExpiryDatePicker(BuildContext context) {
+    final today = DateTime.now();
+    final todayMidnight = DateTime(today.year, today.month, today.day);
+    
     showCupertinoModalPopup(
       context: context,
       builder: (_) => Container(
@@ -67,7 +70,7 @@ class _DoseAndExpiryScreenState extends State<DoseAndExpiryScreen> {
         color: CupertinoColors.systemBackground.resolveFrom(context),
         child: CupertinoDatePicker(
           initialDateTime: _expiryDate ?? DateTime.now().add(const Duration(days: 365)),
-          minimumDate: DateTime.now(),
+          minimumDate: todayMidnight,
           mode: CupertinoDatePickerMode.date,
           onDateTimeChanged: (newDate) {
             setState(() { _expiryDate = newDate; });
