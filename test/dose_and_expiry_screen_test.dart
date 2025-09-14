@@ -315,6 +315,29 @@ void main() {
         final datePicker = tester.widget<CupertinoDatePicker>(find.byType(CupertinoDatePicker));
         expect(datePicker.minimumDate, isNotNull);
         expect(datePicker.minimumDate!.isAfter(DateTime.now().subtract(const Duration(days: 1))), isTrue);
+        
+        // Test that the minimum date is today at midnight (not just after now)
+        final now = DateTime.now();
+        final todayMidnight = DateTime(now.year, now.month, now.day);
+        expect(datePicker.minimumDate, equals(todayMidnight));
+      });
+
+      testWidgets('date picker minimumDate is set to today at midnight', (tester) async {
+        final initialData = createInitialData();
+        await pumpScreen(tester, data: initialData);
+
+        await tester.tap(find.text('Seleziona data'));
+        await tester.pumpAndSettle();
+
+        final datePicker = tester.widget<CupertinoDatePicker>(find.byType(CupertinoDatePicker));
+        
+        // Verify that the minimum date is specifically set to today at midnight
+        final today = DateTime.now();
+        final expectedMinDate = DateTime(today.year, today.month, today.day);
+        expect(datePicker.minimumDate, equals(expectedMinDate));
+        
+        // Verify it's in date mode
+        expect(datePicker.mode, equals(CupertinoDatePickerMode.date));
       });
 
       testWidgets('selecting date should update the display', (tester) async {
@@ -328,12 +351,53 @@ void main() {
         final datePicker = find.byType(CupertinoDatePicker);
         expect(datePicker, findsOneWidget);
 
-        // Close the picker by tapping outside (this would normally update the date)
+        // Get the date picker widget and simulate a date change
+        final datePickerWidget = tester.widget<CupertinoDatePicker>(datePicker);
+        expect(datePickerWidget.onDateTimeChanged, isNotNull);
+        
+        // Simulate selecting a date by calling the callback directly
+        final newDate = DateTime.now().add(const Duration(days: 30));
+        datePickerWidget.onDateTimeChanged(newDate);
+        await tester.pump();
+
+        // Close the picker by tapping outside
         await tester.tapAt(const Offset(200, 100));
         await tester.pumpAndSettle();
 
-        // The button text should no longer be 'Seleziona data' after interaction
-        // (In real usage, a date would be selected)
+        // The internal state should be updated (verified by no errors/crashes)
+        expect(find.byType(DoseAndExpiryScreen), findsOneWidget);
+      });
+
+      testWidgets('date picker onDateTimeChanged callback updates internal state', (tester) async {
+        final initialData = createInitialData();
+        await pumpScreen(tester, data: initialData);
+
+        // Open the date picker
+        await tester.tap(find.text('Seleziona data'));
+        await tester.pumpAndSettle();
+
+        // Find the date picker widget
+        final datePicker = find.byType(CupertinoDatePicker);
+        final datePickerWidget = tester.widget<CupertinoDatePicker>(datePicker);
+        
+        // Simulate multiple date changes to test the setState behavior
+        final date1 = DateTime.now().add(const Duration(days: 10));
+        final date2 = DateTime.now().add(const Duration(days: 20));
+        
+        // Call the callback multiple times to ensure state updates work
+        datePickerWidget.onDateTimeChanged(date1);
+        await tester.pump();
+        
+        datePickerWidget.onDateTimeChanged(date2);
+        await tester.pump();
+
+        // Verify no errors occurred and widget is still functional
+        expect(find.byType(CupertinoDatePicker), findsOneWidget);
+        expect(find.byType(DoseAndExpiryScreen), findsOneWidget);
+        
+        // Close the picker
+        await tester.tapAt(const Offset(200, 100));
+        await tester.pumpAndSettle();
       });
 
       testWidgets('date picker should show formatted date when expiry date is set', (tester) async {

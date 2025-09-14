@@ -416,6 +416,40 @@ void main() {
       expect(fakePlugin.zonedScheduleCallCount, 1);
     });
 
+    test('scheduleExpiryNotification triggers immediate notification when expiry is within 7 days', () async {
+      // Arrange
+      final now = DateTime.now();
+      final expiryDateSoon = now.add(const Duration(days: 3)); // Within 7 days
+      final therapy = Therapy(
+        id: 12,
+        drugName: 'Soon Expiring Drug',
+        drugDosage: '10mg',
+        doseAmount: '1',
+        takingFrequency: TakingFrequency.onceDaily,
+        reminderTimes: ['08:00'],
+        startDate: now.subtract(const Duration(days: 5)),
+        endDate: now.add(const Duration(days: 1)),
+        expiryDate: expiryDateSoon,
+        doseThreshold: 1,
+        isActive: true,
+        isPaused: false,
+      );
+
+      fakePlugin.cancelCallCount = 0;
+      fakePlugin.showCallCount = 0;
+      fakePlugin.zonedScheduleCallCount = 0;
+
+      // Act
+      await notificationService.scheduleExpiryNotification(therapy);
+
+      // Assert
+      expect(fakePlugin.cancelCallCount, 1); // Should cancel existing expiry notification
+      expect(fakePlugin.showCallCount, 1); // Should show immediate notification
+      expect(fakePlugin.zonedScheduleCallCount, 0); // Should not schedule future notification
+      expect(fakePlugin.lastShownId, -100012); // Expiry ID format: -therapy.id - 100000
+      expect(fakePlugin.lastShownTitle, contains('Farmaco in Scadenza: Soon Expiring Drug'));
+    });
+
     test('cancelAllNotifications delete all previously scheduled notifications', () async {
       // Arrange
       fakePlugin.cancelCallCount = 0;
