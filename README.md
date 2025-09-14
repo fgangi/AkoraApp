@@ -290,13 +290,6 @@ Currently supports:
 - **Location**: Used only for pharmacy search, not stored or shared
 - **No Analytics**: We don't track user behavior or collect usage data
 
-## 🙏 Acknowledgments
-
-- **OpenAI** for providing the AI assistant capabilities
-- **Flutter Team** for the excellent cross-platform framework
-- **OpenStreetMap** for the mapping data and tiles
-- **Open Source Community** for the amazing packages used in this project
-
 ---
 
 ## 👥 Team
