@@ -1,6 +1,4 @@
-# Akòra
-
-Your Daily Therapeutic Support 🏥💊
+# Akòra - Your Daily Therapeutic Support 🏥💊
 
 <div align="center">
   <img src="assets/images/akora_logo_banner-b.png" width="400"/>
